@@ -12,7 +12,9 @@ from stormdrain.pipeline import Branchpoint
 from stormdrain.support.matplotlib.linked import LinkedPanels
 from stormdrain.support.matplotlib.mplevents import MPLaxesManager
 from stormdrain.support.matplotlib.artistupdaters import scatter_dataset_on_panels, FigureUpdater
+from stormdrain.support.matplotlib.formatters import SecDayFormatter
 from stormdrain.support.coords.filters import CoordinateSystemController
+
 
 class Panels4D(LinkedPanels):
     # 1.618
@@ -38,6 +40,10 @@ class Panels4D(LinkedPanels):
     def __init__(self, *args, **kwargs):
         self.names_4D = kwargs.pop('names_4D', ('lon', 'lat', 'alt', 'time'))
         self.figure = kwargs.pop('figure', None)
+        self.basedate = kwargs.pop('basedate', None)
+        if self.basedate is None:
+            self.basedate = datetime.datetime(1970,1,1,0,0,0)
+
         ctr_lat, ctr_lon, ctr_alt = kwargs.pop('ctr_lat', 33.5), kwargs.pop('ctr_lon', -101.5), kwargs.pop('ctr_alt', 0.0)
         self.cs = CoordinateSystemController(ctr_lat, ctr_lon, ctr_alt)
         
@@ -54,6 +60,8 @@ class Panels4D(LinkedPanels):
                          self.panels['zy']: (self.names_4D[2], self.names_4D[1]),
                          self.panels['tz']: (self.names_4D[3], self.names_4D[2]), }
             kwargs['ax_specs'] = ax_specs
+            
+            self.panels['tz'].xaxis.set_major_formatter(SecDayFormatter(self.basedate, self.panels['tz'].xaxis))
             
         super(Panels4D, self).__init__(*args, **kwargs)
 
@@ -96,7 +104,7 @@ def plot_demo_dataset(d, panels):
     scatter_outlet_broadcaster = scatter_dataset_on_panels(panels=panels, color_field='time')
     scatter_updater = scatter_outlet_broadcaster.broadcast() 
     final_bound_filter = BoundsFilter(target=scatter_updater, bounds=panels.bounds)
-    final_filterer = final_bound_filter.filter()   
+    final_filterer = final_bound_filter.filter()
     cs_transformer = panels.cs.project_points(target=final_filterer, x_coord='x', y_coord='y', z_coord='z', 
                         lat_coord='lat', lon_coord='lon', alt_coord='alt', distance_scale_factor=1.0e-3)
     branch.targets.add(cs_transformer)
@@ -105,7 +113,7 @@ def plot_demo_dataset(d, panels):
     return branch, scatter_outlet_broadcaster
     
 
-def B4D_startup(show=False):
+def B4D_startup(show=False, basedate=None):
     import matplotlib
     fontspec = {'family':'Helvetica', 'weight':'bold', 'size':10}
     matplotlib.rc('font', **fontspec)
@@ -113,7 +121,7 @@ def B4D_startup(show=False):
     import matplotlib.pyplot as plt
                         
     panel_fig = plt.figure()
-    panels = Panels4D(figure=panel_fig, names_4D=('x', 'y', 'z', 'time'))
+    panels = Panels4D(figure=panel_fig, names_4D=('x', 'y', 'z', 'time'), basedate=basedate)
     fig_updater = FigureUpdater(panel_fig)
     
     panels.panels['xy'].axis((-1000, 1000, -1000, 1000))
