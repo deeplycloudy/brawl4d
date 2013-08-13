@@ -9,11 +9,20 @@ from stormdrain.bounds import BoundsFilter
 from stormdrain.data import NamedArrayDataset
 from stormdrain.pipeline import Branchpoint
 
+from stormdrain.pubsub import get_exchange
 from stormdrain.support.matplotlib.linked import LinkedPanels
 from stormdrain.support.matplotlib.mplevents import MPLaxesManager
 from stormdrain.support.matplotlib.artistupdaters import scatter_dataset_on_panels, FigureUpdater
 from stormdrain.support.matplotlib.formatters import SecDayFormatter
 from stormdrain.support.coords.filters import CoordinateSystemController
+
+from stormdrain.support.matplotlib.poly_lasso import PolyLasso
+
+
+class PanelLasso(object):
+    def __init__(self, panels):
+        self.panels = panels
+        
 
 
 class Panels4D(LinkedPanels):
@@ -64,6 +73,29 @@ class Panels4D(LinkedPanels):
             self.panels['tz'].xaxis.set_major_formatter(SecDayFormatter(self.basedate, self.panels['tz'].xaxis))
             
         super(Panels4D, self).__init__(*args, **kwargs)
+        
+        
+
+    def _lasso_callback(self, ax, lasso_line, verts):
+        self.figure.canvas.widgetlock.release(self._active_lasso)
+        self._active_lasso=None
+        xchg = get_exchange('B4D_panel_lasso_drawn')
+        print xchg._subscribers
+        xchg.send((self, ax, lasso_line, verts))
+
+
+    def lasso(self):
+        """ Attach to B4D_panel_lasso_drawn exchange to get the panels, axes, 
+            MPL line artist, and verts for each lasso drawn
+        """        
+        lock = self.figure.canvas.widgetlock
+        if lock.locked()==False:
+            self._active_lasso = PolyLasso(self.figure, self._lasso_callback)
+            lock(self._active_lasso)
+        else:
+            print "Please deselect other tools to use the lasso."
+
+    
 
 def get_demo_dataset(): 
     data = np.asarray( [ ('The Most Toxic \nTown in America', 36.983, -94.833,  250. , 1.34 ),
