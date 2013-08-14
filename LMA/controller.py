@@ -4,18 +4,18 @@
     understood by the lmatools package.
 
 """
-
 import numpy as np
-from numpy.lib.recfunctions import append_fields
 
 from lmatools.flashsort.autosort.LMAarrayFile import LMAdataFile
 
 from stormdrain.bounds import Bounds, BoundsFilter
-from stormdrain.data import NamedArrayDataset
+from stormdrain.data import NamedArrayDataset, indexed
 from stormdrain.pipeline import Branchpoint, coroutine, CachedTriggerableSegment, ItemModifier
 from stormdrain.support.matplotlib.artistupdaters import scatter_dataset_on_panels
 from stormdrain.support.matplotlib.poly_lasso import LassoFilter
 from stormdrain.pubsub import get_exchange
+
+
 
 class LMAController(object):
     """ Manages bounds object with LMA-specific criteria. Convenience functions for loading LMA data.
@@ -26,8 +26,6 @@ class LMAController(object):
                              stations=(6, 99)
                              )
         self.datasets = set()
-    
-    
     
     def pipeline_for_dataset(self, d, panels):
         # Set up dataset -> time-height bound filter -> brancher
@@ -48,7 +46,7 @@ class LMAController(object):
         scatter_outlet_broadcaster = scatter_dataset_on_panels(panels=panels, color_field='time')
         scatter_updater = scatter_outlet_broadcaster.broadcast() 
         final_bound_filter = BoundsFilter(target=scatter_updater, bounds=panels.bounds)
-        final_filterer = final_bound_filter.filter()   
+        final_filterer = final_bound_filter.filter()
         cs_transformer = panels.cs.project_points(target=final_filterer, x_coord='x', y_coord='y', z_coord='z', 
                             lat_coord='lat', lon_coord='lon', alt_coord='alt', distance_scale_factor=1.0e-3)
         branch.targets.add(cs_transformer)
@@ -56,32 +54,31 @@ class LMAController(object):
         # ask for a copy of the array from each selection operation, so that
         # it's saved and ready for any lasso operations
         
-        @coroutine
-        def modified_time_printer():
-            while True:
-                a = (yield)
-                for t,c in zip(a['time'], a['charge']):
-                    print("{0:11.5f}, {1}".format(t,c))
+        # @coroutine
+        # def modified_time_printer():
+        #     while True:
+        #         a = (yield)
+        #         for t,c in zip(a['time'], a['charge']):
+        #             print("{0:11.5f}, {1}".format(t,c))
         
-        charge_lasso = LassoChargeController(target=ItemModifier(target=modified_time_printer(), item_name='charge').modify())
+        # charge_lasso = LassoChargeController(target=ItemModifier(target=modified_time_printer(), item_name='charge').modify())
+
+        charge_lasso = LassoChargeController(target=ItemModifier(target=d.update(field_names=['charge']), item_name='charge').modify())
         scatter_outlet_broadcaster.targets.add(charge_lasso.cache_segment.cache_segment())
 
         # return each broadcaster so that other things can tap into results of transformation of this dataset
         return branch, scatter_outlet_broadcaster, charge_lasso
-        
     
-    
+    @indexed
     def load_dat(self, *args, **kwargs):
         """ All args and kwargs are passed to the LMAdataFile object from lmatools"""
         lma = LMAdataFile(*args, **kwargs)
-        # this adds stations to lma.data
-        stn = lma.stations
-        # a = append_fields(lma.data, 'stations', stn, usemask=False)
+        stn = lma.stations # adds stations to lma.data as a side-effect
         d = NamedArrayDataset(lma.data)
         self.datasets.add(d)
         return d
         
-        
+    @indexed    
     def load_hdf5(self, LMAfileHDF):
         import tables
         # this could be made more interestin: file itself as a proxy dataset.
@@ -94,7 +91,6 @@ class LMAController(object):
         events = LMAh5.getNode(table_path)
         d = NamedArrayDataset(events[:])
         LMAh5.close()
-        
         return d
 
 class LassoChargeController(object):
@@ -131,7 +127,7 @@ class LassoChargeController(object):
     def add_charge_value(self, target=None):
         while True:
             a = (yield)
-            if (self.charge is not None) and (self.target is not None):
+            if (self.charge is not None) and (target is not None):
                 target.send((a, self.charge))
             
     def send(self, msg):
@@ -145,8 +141,6 @@ class LassoChargeController(object):
         coord_names = panels.ax_specs[ax]
         self.lasso_filter.coord_names = coord_names
         self.lasso_filter.verts = verts
-        print coord_names, verts
-        
         if self.charge is None:
             return
         else:

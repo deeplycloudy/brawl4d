@@ -80,7 +80,6 @@ class Panels4D(LinkedPanels):
         self.figure.canvas.widgetlock.release(self._active_lasso)
         self._active_lasso=None
         xchg = get_exchange('B4D_panel_lasso_drawn')
-        print xchg._subscribers
         xchg.send((self, ax, lasso_line, verts))
 
 
