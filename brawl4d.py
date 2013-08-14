@@ -12,7 +12,7 @@ from stormdrain.pipeline import Branchpoint
 from stormdrain.pubsub import get_exchange
 from stormdrain.support.matplotlib.linked import LinkedPanels
 from stormdrain.support.matplotlib.mplevents import MPLaxesManager
-from stormdrain.support.matplotlib.artistupdaters import scatter_dataset_on_panels, FigureUpdater
+from stormdrain.support.matplotlib.artistupdaters import PanelsScatterController, FigureUpdater
 from stormdrain.support.matplotlib.formatters import SecDayFormatter
 from stormdrain.support.coords.filters import CoordinateSystemController
 
@@ -132,7 +132,8 @@ def plot_demo_dataset(d, panels):
     d.target = filterer
     
     # Set up brancher -> coordinate transform -> final_filter -> mutli-axis scatter updater
-    scatter_outlet_broadcaster = scatter_dataset_on_panels(panels=panels, color_field='time')
+    scatter_ctrl = PanelsScatterController(panels=panels, color_field='time')
+    scatter_outlet_broadcaster = scatter_ctrl.branchpoint
     scatter_updater = scatter_outlet_broadcaster.broadcast() 
     final_bound_filter = BoundsFilter(target=scatter_updater, bounds=panels.bounds)
     final_filterer = final_bound_filter.filter()
