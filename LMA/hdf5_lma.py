@@ -12,7 +12,16 @@ class HDF5Dataset(object):
         self.data = self.table[:]
         
         self.bounds_updated_xchg = get_exchange('SD_bounds_updated')
-        self.bounds_updated_xchg.attach(self)        
+        self.bounds_updated_xchg.attach(self)
+        
+        flash_table_path = table_path.replace('events', 'flashes')
+        try:
+            self.flash_table = self.h5file.getNode(flash_table_path)
+            self.flash_data = self.flash_table[:]
+        except tables.NoSuchNodeError:
+            self.flash_table = None
+            print "Did not find flash data at {0}".format(flash_table_path)
+            
 
     def update_h5(self, colname, coldata, row_ids):
         col = getattr(self.table.cols, colname)

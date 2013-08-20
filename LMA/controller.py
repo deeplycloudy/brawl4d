@@ -14,7 +14,19 @@ from stormdrain.pipeline import Branchpoint, coroutine, ItemModifier
 from stormdrain.support.matplotlib.artistupdaters import PanelsScatterController
 from stormdrain.support.matplotlib.poly_lasso import LassoPayloadController
 
-
+class LMAAnimator(object):
+    
+    
+    def __init__(self, duration, variable='time'):
+        self.tstart = time.time()
+        self.duration = duration
+        
+    def draw_frame(self, animator, time_fraction):
+        pass
+        
+    
+    def init_draw(self, animator):
+        pass
 
 
 class LMAController(object):
@@ -61,6 +73,43 @@ class LMAController(object):
         # return each broadcaster so that other things can tap into results of transformation of this dataset
         return branch, scatter_ctrl
     
+    @coroutine
+    def flash_stat_printer(self, min_points=10):
+        while True:
+            ev, fl = (yield)
+            template = "{0} of {1} flashes have > {3} points. Their average area = {2:5.1f} km^2"
+            N = len(fl)
+            good = (fl['n_points'] >= min_points)
+            N_good = len(fl[good])
+            area = np.mean(fl['area'][good])
+            print template.format(N_good, N, area, min_points)
+        
+    def flash_stats_for_dataset(self, d, selection_broadcaster):
+        
+        flash_stat_branchpoint = Branchpoint([self.flash_stat_printer()])
+        flash_stat_brancher = flash_stat_branchpoint.broadcast()
+        
+        @coroutine
+        def flash_data_for_selection(target, flash_id_key = 'flash_id'):
+            """ Accepts an array of event data from the pipeline, and sends 
+                event and flash data.
+            """
+            while True:
+                ev = (yield) # array of event data
+                fl_dat = d.flash_data
+                
+                flash_ids = set(ev[flash_id_key])
+                flashes = np.fromiter(
+                            (fl for fl in fl_dat if fl[flash_id_key] in flash_ids), 
+                            dtype=fl_dat.dtype)
+                target.send((ev, flashes))
+                
+        selection_broadcaster.targets.add(flash_data_for_selection(flash_stat_brancher))
+        return flash_stat_branchpoint
+        
+        
+        
+        
     @indexed
     def read_dat(self, *args, **kwargs):
         """ All args and kwargs are passed to the LMAdataFile object from lmatools"""
@@ -102,6 +151,10 @@ class LMAController(object):
         LMAh5.close()
         d = HDF5Dataset(LMAfileHDF, table_path=table_path, mode='a')
         self.datasets.add(d)
+        
+        if d.flash_table is not None:
+            print "found flash data"
+        
         return d
         
     def load_hdf5_to_panels(self, panels, LMAfileHDF):
