@@ -63,7 +63,7 @@ class Panels4D(LinkedPanels):
             self.panels['xz'] = fig.add_axes(Panels4D.margin_defaults['xz'], sharex=self.panels['xy'])
             self.panels['zy'] = fig.add_axes(Panels4D.margin_defaults['zy'], sharey=self.panels['xy'])
             self.panels['tz'] = fig.add_axes(Panels4D.margin_defaults['tz'], sharey=self.panels['xz'])
-            
+                        
             ax_specs = { self.panels['xy']: (self.names_4D[0], self.names_4D[1]), 
                          self.panels['xz']: (self.names_4D[0], self.names_4D[2]),
                          self.panels['zy']: (self.names_4D[2], self.names_4D[1]),
@@ -74,8 +74,12 @@ class Panels4D(LinkedPanels):
             
         super(Panels4D, self).__init__(*args, **kwargs)
         
-        
-
+        # This is a good idea. But zooming on a wide, short area in x,y causes the 
+        # data to subset but the axes to remain zoomed out. There is some sort of
+        # problematic interaciton with the interaction-complete notification.
+        # self.panels['xy'].set_aspect('equal')
+        self.equal_ax.add(self.panels['xy'])
+    
     def _lasso_callback(self, ax, lasso_line, verts):
         self.figure.canvas.widgetlock.release(self._active_lasso)
         self._active_lasso=None
