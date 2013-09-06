@@ -1,3 +1,40 @@
+"""
+This code can be used to display a stream of LiveLMA data, read using the
+Websocket stream support in lmatools.
+
+Example
+-------
+
+# In an IPython notebook, you can then run:
+%pylab
+
+server="ws://someuniversity.edu:port/path/to/stream"
+
+import numpy as np
+from datetime import datetime
+today = datetime.now().date()
+basedate = datetime(today.year, today.month, today.day)
+print basedate
+
+from brawl4d.brawl4d import B4D_startup
+from brawl4d.LMA.controller import LMAController
+from brawl4d.LMA.live import LiveLMADataset
+
+panels = B4D_startup(basedate=basedate)
+lma_ctrl = LMAController()
+d = LiveLMADataset(host=server)
+post_filter_brancher, post_transform_branch_to_scatter_artists = lma_ctrl.pipeline_for_dataset(d, panels)
+
+panels.panels['tz'].axis((0, 86400, 0, 20))
+lma_ctrl.bounds.stations=(6,99)
+lma_ctrl.bounds.chi2=(0,1.0)
+
+This example does not automatically update the time in the plot, but is
+easily accomplished by tapping into matplotlib's timer events.
+
+"""
+
+
 import threading
 from collections import deque
 
