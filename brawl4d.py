@@ -74,11 +74,27 @@ class Panels4D(LinkedPanels):
             
         super(Panels4D, self).__init__(*args, **kwargs)
         
-        # This is a good idea. But zooming on a wide, short area in x,y causes the 
+        # The built-in is a good idea. But zooming on a wide, short area in x,y causes the
         # data to subset but the axes to remain zoomed out. There is some sort of
         # problematic interaciton with the interaction-complete notification.
         # self.panels['xy'].set_aspect('equal')
         self.equal_ax.add(self.panels['xy'])
+
+        # Note this won't work in <1.2.x: https://github.com/matplotlib/matplotlib/pull/1585/
+        resize_id = self.figure.canvas.mpl_connect('resize_event', self._figure_resized)
+    
+    def _figure_resized(self, event):
+        # Force a reflow of data by notifying the xy axis manager, which needs to
+        # be kept square, that something happened to the figure. In this case,
+        # no change to limits, but the axes aspect changed.
+        # Might want to make this a generic exchange-based event at some point.
+        
+        # To force a certain aspect ratio on the figure, might also use
+        # figure.canvas.resize(w,h)
+        
+        ax_name = self.ax_specs[self.panels['xy']]
+        ax_mgr  = self.axes_managers[ax_name]
+        self.send(ax_mgr)
     
     def _lasso_callback(self, ax, lasso_line, verts):
         self.figure.canvas.widgetlock.release(self._active_lasso)
