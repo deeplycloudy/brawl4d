@@ -165,7 +165,7 @@ def plot_demo_dataset(d, panels):
     return branch, scatter_outlet_broadcaster
     
 
-def B4D_startup(show=False, basedate=None):
+def B4D_startup(show=False, basedate=None, ctr_lat=33.5, ctr_lon=-101.5):
     import matplotlib
     fontspec = {'family':'Helvetica', 'weight':'bold', 'size':10}
     matplotlib.rc('font', **fontspec)
@@ -173,7 +173,7 @@ def B4D_startup(show=False, basedate=None):
     import matplotlib.pyplot as plt
                         
     panel_fig = plt.figure()
-    panels = Panels4D(figure=panel_fig, names_4D=('x', 'y', 'z', 'time'), basedate=basedate)
+    panels = Panels4D(figure=panel_fig, names_4D=('x', 'y', 'z', 'time'), basedate=basedate, ctr_lat=ctr_lat, ctr_lon=ctr_lon)
     fig_updater = FigureUpdater(panel_fig)
     
     panels.panels['xy'].axis((-1000, 1000, -1000, 1000))
