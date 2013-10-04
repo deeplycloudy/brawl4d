@@ -44,15 +44,6 @@ from numpy.lib.recfunctions import rename_fields
 from stormdrain.pubsub import get_exchange
 from lmatools.live.liveLMA import LiveLMAController, WebsocketClient
 
-def force_debug(func):
-    def wrapped(*args, **kwargs):
-        try:
-            func(*args,**kwargs)
-        except:
-            import sys, traceback
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            print(exc_value, traceback.extract_tb(exc_traceback)[-1])            
-    return wrapped
     
 
 class LiveLMATimeController(object):
@@ -131,7 +122,6 @@ class LiveLMADataset(object):
             self._dataq.append(newdata)
             self.send("B4D_LMAnewsources_live")
     
-    @force_debug
     def send(self, msg):
         """ SD_bounds_updated messages are sent here """
         
