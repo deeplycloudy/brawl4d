@@ -110,7 +110,7 @@ class LMAController(object):
         
         
         
-    @indexed
+    @indexed()
     def read_dat(self, *args, **kwargs):
         """ All args and kwargs are passed to the LMAdataFile object from lmatools"""
         lma = LMAdataFile(*args, **kwargs)
