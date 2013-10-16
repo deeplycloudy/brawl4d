@@ -11,8 +11,7 @@ class HDF5Dataset(object):
         self.table = self.h5file.getNode(table_path)
         self.data = self.table[:]
         
-        self.bounds_updated_xchg = get_exchange('SD_bounds_updated')
-        self.bounds_updated_xchg.attach(self)
+        get_exchange('SD_reflow_start').attach(self)
         
         flash_table_path = table_path.replace('events', 'flashes')
         try:
@@ -58,7 +57,7 @@ class HDF5Dataset(object):
                 
         
     def send(self, msg):
-        """ SD_bounds_updated messages are sent here """
+        """ SD_reflow_start messages are sent here """
         
         # do we send the whole events table, or somehow dynamically determine that?
         

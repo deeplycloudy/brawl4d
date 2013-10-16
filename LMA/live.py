@@ -92,8 +92,7 @@ class LiveLMADataset(object):
     
     def __init__(self, target=None, host=None, basedate=None):
         self.target = target
-        self.bounds_updated_xchg = get_exchange('SD_bounds_updated')
-        self.bounds_updated_xchg.attach(self)
+        get_exchange('SD_reflow_start').attach(self)
         
         self._t_offset = 0.0
         if basedate is not None:
@@ -123,7 +122,7 @@ class LiveLMADataset(object):
             self.send("B4D_LMAnewsources_live")
     
     def send(self, msg):
-        """ SD_bounds_updated messages are sent here """
+        """ SD_reflow_data messages are sent here """
         
         # do we send the whole events table, or somehow dynamically determine that?
         if len(self._dataq) > 0:

@@ -12,7 +12,11 @@ from lmatools.NLDN import NLDNdataFile
 
 
 class GroundMarkerHeightController(object):
-    
+    """ When the bounds of the current view change, it's necessary to adjust
+        the height at which the ground-level markers are plotted, since they should be along
+        the bottom edge of the height view (their height is actually arbitrary) in order
+        to remain visible.
+    """
     def __init__(self, target=None, initial_height=0.0, alt_name='alt', alt_factor=1000.0):
 
         self.bounds_updated_xchg = get_exchange('SD_bounds_updated')
