@@ -63,6 +63,13 @@ class Panels4D(LinkedPanels):
             self.panels['xz'] = fig.add_axes(Panels4D.margin_defaults['xz'], sharex=self.panels['xy'])
             self.panels['zy'] = fig.add_axes(Panels4D.margin_defaults['zy'], sharey=self.panels['xy'])
             self.panels['tz'] = fig.add_axes(Panels4D.margin_defaults['tz'], sharey=self.panels['xz'])
+            
+            self.panels['xy'].set_xlabel('East distance (km)')
+            self.panels['xy'].set_ylabel('North distance (km)')
+            self.panels['xz'].set_ylabel('Altitude (km)')
+            self.panels['zy'].set_xlabel('Altitude (km)')
+            self.panels['tz'].set_xlabel('Time (UTC)')
+            self.panels['tz'].set_ylabel('Altitude (km)')
                         
             ax_specs = { self.panels['xy']: (self.names_4D[0], self.names_4D[1]), 
                          self.panels['xz']: (self.names_4D[0], self.names_4D[2]),
@@ -172,7 +179,7 @@ def B4D_startup(show=False, basedate=None, ctr_lat=33.5, ctr_lon=-101.5):
     
     import matplotlib.pyplot as plt
                         
-    panel_fig = plt.figure()
+    panel_fig = plt.figure(figsize=(8.5, 11.0))
     panels = Panels4D(figure=panel_fig, names_4D=('x', 'y', 'z', 'time'), basedate=basedate, ctr_lat=ctr_lat, ctr_lon=ctr_lon)
     fig_updater = FigureUpdater(panel_fig)
     
