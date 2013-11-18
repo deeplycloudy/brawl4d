@@ -1,0 +1,158 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Welcome to brawl4d’s documentation! &mdash; brawl4d 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="brawl4d 0.1.0 documentation" href="#" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="#">brawl4d 0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="welcome-to-brawl4d-s-documentation">
+<h1>Welcome to brawl4d&#8217;s documentation!<a class="headerlink" href="#welcome-to-brawl4d-s-documentation" title="Permalink to this headline">¶</a></h1>
+<p>Contents:</p>
+<div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+</div>
+<div class="section" id="quickstart">
+<h1>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this headline">¶</a></h1>
+<p>brawl4d (B4D) is meant to be used within an IPython notebook, which allows for both GUI-driven and programmatic exploration of the data.</p>
+<p>Times are treated as float seconds since a reference day</p>
+<p>Basic startup goes like so:</p>
+<div class="highlight-python"><pre>%pylab
+from datetime import datetime
+from brawl4d.brawl4d import B4D_startup
+stadium = 33.591023, -101.872908
+panels = B4D_startup(basedate=datetime(2013,9,7), ctr_lat=stadium[0], ctr_lon=stadium[1])</pre>
+</div>
+<p>The <cite>panels</cite> instance represents the four-dimensional linked-panels plot. It contains references to each of the matplotlib axes instances in the <cite>panels.panels</cite> dictionary. If you need to make a static addition to the plot, just like you would in an ordinary plotting script, this is the way to do it:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># valid keys are &#39;xy&#39;, &#39;xz&#39;, &#39;zy&#39;, &#39;tz&#39;</span>
+<span class="n">panels</span><span class="o">.</span><span class="n">panels</span><span class="p">[</span><span class="s">&#39;xy&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;TTU Football Stadium&#39;</span><span class="p">)</span>
+<span class="c"># zoom in on the TTU campus</span>
+<span class="n">panels</span><span class="o">.</span><span class="n">panels</span><span class="p">[</span><span class="s">&#39;xy&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><cite>panels.cs</cite> also contains information about the coordinate system for the map projection used. Let&#8217;s label another feature of interest.</p>
+<blockquote>
+<div># These can be arrays of locations, too
+atmo_lat, atmo_lon, atmo_alt = 33.58185, -101.88097, 0.0
+X,Y,Z = panels.cs.geoProj.toECEF(atmo_lon, atmo_lat, atmo_alt)
+x,y,z = panels.cs.mapProj.fromECEF(X,Y,Z)
+panels.panels[&#8216;xy&#8217;].text(x,y,&#8217;TTU Atmospheric Science&#8217;)</div></blockquote>
+<p>The real power of brawl4d comes when using the underlying stormdrain framework to manage multidimensional data that remains sync&#8217;d across axes. This requires setting up a data processing pipeline that responds to changes to the plot&#8217;s bounds (stored in <cite>panels.bounds</cite>) and handles the necessary coordinate transformations automatically.</p>
+<div class="section" id="loading-lma-data">
+<h2>Loading LMA data<a class="headerlink" href="#loading-lma-data" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="what-s-where">
+<h2>What&#8217;s where<a class="headerlink" href="#what-s-where" title="Permalink to this headline">¶</a></h2>
+<p>panels: Linked panels
+panels.cs: Coordinate system for the panels display</p>
+</div>
+<div class="section" id="accessing-data-in-the-current-view">
+<h2>Accessing data in the current view<a class="headerlink" href="#accessing-data-in-the-current-view" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>
+<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Welcome to brawl4d&#8217;s documentation!</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#quickstart">Quickstart</a><ul>
+<li><a class="reference internal" href="#loading-lma-data">Loading LMA data</a></li>
+<li><a class="reference internal" href="#what-s-where">What&#8217;s where</a></li>
+<li><a class="reference internal" href="#accessing-data-in-the-current-view">Accessing data in the current view</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="#">brawl4d 0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Eric Bruning.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
