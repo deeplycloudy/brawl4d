@@ -40,11 +40,13 @@ The `panels` instance represents the four-dimensional linked-panels plot. It con
     panels.panels['xy'].text(x,y,'TTU Atmospheric Science')
     
 
-The real power of brawl4d comes when using the underlying stormdrain framework to manage multidimensional data that remains synced across axes. This requires setting up a data processing pipeline that responds to changes to the plot's bounds (stored in `panels.bounds`) and handles the necessary coordinate transformations automatically.
+brawl4d can use the underlying stormdrain framework to manage multidimensional data that remains synced across axes. To take advantage of this requires setting up a data processing pipeline that responds to changes to the plot's bounds (stored in `panels.bounds`) and handles the necessary coordinate transformations automatically.
 
-`brawl4d.plot_demo_dataset` contains the following example::
+`brawl4d.plot_demo_dataset` contains a good example.
 
     
+Accessing data in the current view
+----------------------------------
 
 
 Loading LMA data
@@ -53,16 +55,6 @@ Loading LMA data
 .. code-block:: python
     from brawl4d.LMA.controller import LMAController
     
-
-What's where
-------------
-
-panels: Linked panels
-panels.cs: Coordinate system for the panels display
-
-    
-Accessing data in the current view
-----------------------------------
 
 
 

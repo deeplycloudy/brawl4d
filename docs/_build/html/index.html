@@ -55,8 +55,7 @@
 <div class="section" id="quickstart">
 <h1>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this headline">¶</a></h1>
 <p>brawl4d (B4D) is meant to be used within an IPython notebook, which allows for both GUI-driven and programmatic exploration of the data.</p>
-<p>Times are treated as float seconds since a reference day</p>
-<p>Basic startup goes like so:</p>
+<p>Plots defaults to use of a map projection in kilometers centered at a specified geographic location. Anything plotted on the time axis is specified in float seconds since a reference day. So basic startup looks like this:</p>
 <div class="highlight-python"><pre>%pylab
 from datetime import datetime
 from brawl4d.brawl4d import B4D_startup
@@ -70,24 +69,21 @@ panels = B4D_startup(basedate=datetime(2013,9,7), ctr_lat=stadium[0], ctr_lon=st
 <span class="n">panels</span><span class="o">.</span><span class="n">panels</span><span class="p">[</span><span class="s">&#39;xy&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
 </pre></div>
 </div>
-<p><cite>panels.cs</cite> also contains information about the coordinate system for the map projection used. Let&#8217;s label another feature of interest.</p>
-<blockquote>
-<div># These can be arrays of locations, too
-atmo_lat, atmo_lon, atmo_alt = 33.58185, -101.88097, 0.0
-X,Y,Z = panels.cs.geoProj.toECEF(atmo_lon, atmo_lat, atmo_alt)
-x,y,z = panels.cs.mapProj.fromECEF(X,Y,Z)
-panels.panels[&#8216;xy&#8217;].text(x,y,&#8217;TTU Atmospheric Science&#8217;)</div></blockquote>
-<p>The real power of brawl4d comes when using the underlying stormdrain framework to manage multidimensional data that remains sync&#8217;d across axes. This requires setting up a data processing pipeline that responds to changes to the plot&#8217;s bounds (stored in <cite>panels.bounds</cite>) and handles the necessary coordinate transformations automatically.</p>
-<div class="section" id="loading-lma-data">
-<h2>Loading LMA data<a class="headerlink" href="#loading-lma-data" title="Permalink to this headline">¶</a></h2>
+<p><cite>panels.cs</cite> also contains information about the coordinate system for the map projection used. Let&#8217;s label another feature of interest:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># These can be arrays of locations, too</span>
+<span class="n">atmo_lat</span><span class="p">,</span> <span class="n">atmo_lon</span><span class="p">,</span> <span class="n">atmo_alt</span> <span class="o">=</span> <span class="mf">33.58185</span><span class="p">,</span> <span class="o">-</span><span class="mf">101.88097</span><span class="p">,</span> <span class="mf">0.0</span>
+<span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="p">,</span><span class="n">Z</span> <span class="o">=</span> <span class="n">panels</span><span class="o">.</span><span class="n">cs</span><span class="o">.</span><span class="n">geoProj</span><span class="o">.</span><span class="n">toECEF</span><span class="p">(</span><span class="n">atmo_lon</span><span class="p">,</span> <span class="n">atmo_lat</span><span class="p">,</span> <span class="n">atmo_alt</span><span class="p">)</span>
+<span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span> <span class="o">=</span> <span class="n">panels</span><span class="o">.</span><span class="n">cs</span><span class="o">.</span><span class="n">mapProj</span><span class="o">.</span><span class="n">fromECEF</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="p">,</span><span class="n">Z</span><span class="p">)</span>
+<span class="n">panels</span><span class="o">.</span><span class="n">panels</span><span class="p">[</span><span class="s">&#39;xy&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="s">&#39;TTU Atmospheric Science&#39;</span><span class="p">)</span>
+</pre></div>
 </div>
-<div class="section" id="what-s-where">
-<h2>What&#8217;s where<a class="headerlink" href="#what-s-where" title="Permalink to this headline">¶</a></h2>
-<p>panels: Linked panels
-panels.cs: Coordinate system for the panels display</p>
-</div>
+<p>brawl4d can use the underlying stormdrain framework to manage multidimensional data that remains synced across axes. To take advantage of this requires setting up a data processing pipeline that responds to changes to the plot&#8217;s bounds (stored in <cite>panels.bounds</cite>) and handles the necessary coordinate transformations automatically.</p>
+<p><cite>brawl4d.plot_demo_dataset</cite> contains a good example.</p>
 <div class="section" id="accessing-data-in-the-current-view">
 <h2>Accessing data in the current view<a class="headerlink" href="#accessing-data-in-the-current-view" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="loading-lma-data">
+<h2>Loading LMA data<a class="headerlink" href="#loading-lma-data" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 <div class="section" id="indices-and-tables">
@@ -111,9 +107,8 @@ panels.cs: Coordinate system for the panels display</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#quickstart">Quickstart</a><ul>
-<li><a class="reference internal" href="#loading-lma-data">Loading LMA data</a></li>
-<li><a class="reference internal" href="#what-s-where">What&#8217;s where</a></li>
 <li><a class="reference internal" href="#accessing-data-in-the-current-view">Accessing data in the current view</a></li>
+<li><a class="reference internal" href="#loading-lma-data">Loading LMA data</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>

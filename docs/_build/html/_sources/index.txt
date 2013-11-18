@@ -16,9 +16,7 @@ Quickstart
 
 brawl4d (B4D) is meant to be used within an IPython notebook, which allows for both GUI-driven and programmatic exploration of the data.
 
-Times are treated as float seconds since a reference day
-
-Basic startup goes like so::
+Plots defaults to use of a map projection in kilometers centered at a specified geographic location. Anything plotted on the time axis is specified in float seconds since a reference day. So basic startup looks like this::
 
     %pylab
     from datetime import datetime
@@ -33,7 +31,7 @@ The `panels` instance represents the four-dimensional linked-panels plot. It con
     # zoom in on the TTU campus
     panels.panels['xy'].axis(-5, 5, -5, 5)
 
-`panels.cs` also contains information about the coordinate system for the map projection used. Let's label another feature of interest.
+`panels.cs` also contains information about the coordinate system for the map projection used. Let's label another feature of interest::
     
     # These can be arrays of locations, too
     atmo_lat, atmo_lon, atmo_alt = 33.58185, -101.88097, 0.0
@@ -42,8 +40,14 @@ The `panels` instance represents the four-dimensional linked-panels plot. It con
     panels.panels['xy'].text(x,y,'TTU Atmospheric Science')
     
 
-The real power of brawl4d comes when using the underlying stormdrain framework to manage multidimensional data that remains sync'd across axes. This requires setting up a data processing pipeline that responds to changes to the plot's bounds (stored in `panels.bounds`) and handles the necessary coordinate transformations automatically.
+brawl4d can use the underlying stormdrain framework to manage multidimensional data that remains synced across axes. To take advantage of this requires setting up a data processing pipeline that responds to changes to the plot's bounds (stored in `panels.bounds`) and handles the necessary coordinate transformations automatically.
+
+`brawl4d.plot_demo_dataset` contains a good example.
+
     
+Accessing data in the current view
+----------------------------------
+
 
 Loading LMA data
 ----------------
@@ -51,16 +55,6 @@ Loading LMA data
 .. code-block:: python
     from brawl4d.LMA.controller import LMAController
     
-
-What's where
-------------
-
-panels: Linked panels
-panels.cs: Coordinate system for the panels display
-
-    
-Accessing data in the current view
-----------------------------------
 
 
 
