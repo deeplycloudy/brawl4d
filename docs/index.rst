@@ -6,11 +6,6 @@
 Welcome to brawl4d's documentation!
 ===================================
 
-Contents:
-
-.. toctree::
-   :maxdepth: 2
-
 Quickstart
 ==========
 
