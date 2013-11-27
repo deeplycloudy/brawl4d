@@ -188,11 +188,13 @@ class LMAController(object):
         
         return d, post_filter_brancher, scatter_ctrl, charge_lasso
         
-    def load_hdf5_flashes_to_panels(self, panels, hdf5dataset):
+    def load_hdf5_flashes_to_panels(self, panels, hdf5dataset, min_points=10):
         """ Set up a flash dataset display. The sole argument is usually the HDF5 
             LMA dataset returned by a call to self.load_hdf5_to_panels """
         from hdf5_lma import HDF5FlashDataset
         if hdf5dataset.flash_table is not None:
+            point_count_dtype = hdf5dataset.flash_data['n_points'].dtype
+            self.bounds.n_points = (min_points, np.iinfo(point_count_dtype))
             flash_d = HDF5FlashDataset(hdf5dataset)
             transform_mapping = {}
             transform_mapping['time'] = ('start', (lambda v: (v[0], v[1])) )
