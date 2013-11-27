@@ -3,6 +3,18 @@ import tables
 from stormdrain.pipeline import coroutine
 from stormdrain.pubsub import get_exchange
 
+class HDF5FlashDataset(object):
+    """ Provides an pipeline source for the flash table part of an HDF5Dataset"""
+    def __init__(self, h5dataset, target=None):
+        self.target=target
+        self.h5dataset = h5dataset
+        get_exchange('SD_reflow_start').attach(self)
+        
+    def send(self, msg):
+        """ SD_reflow_start messages are sent here """
+        if self.target is not None:
+            self.target.send(self.h5dataset.flash_data)
+
 class HDF5Dataset(object):
     def __init__(self, h5filename, table_path=None, target=None, mode='r'):
         self.target = target
@@ -20,7 +32,7 @@ class HDF5Dataset(object):
         except tables.NoSuchNodeError:
             self.flash_table = None
             print "Did not find flash data at {0}".format(flash_table_path)
-            
+        
 
     def update_h5(self, colname, coldata, row_ids):
         col = getattr(self.table.cols, colname)

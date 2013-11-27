@@ -32,13 +32,28 @@ class LMAAnimator(object):
 class LMAController(object):
     """ Manages bounds object with LMA-specific criteria. Convenience functions for loading LMA data.
     """
+    
+    z_alt_mapping = {'z':('alt', (lambda v: (v[0]*1.0e3 - 1.0e3, v[1]*1.0e3 + 1.0e3)) ) }
+    
     def __init__(self, *args, **kwargs):
         super(LMAController, self).__init__(*args, **kwargs)
         self.bounds = Bounds(chi2=(0.0, 1.0), stations=(6, 99))
         self.default_color_bounds = Bounds(parent=self.bounds, charge=(-1,1))
         self.datasets = set()
+        self.flash_datasets = set()
     
-    def pipeline_for_dataset(self, d, panels):
+    def pipeline_for_dataset(self, d, panels, 
+                             names4d=('lon', 'lat', 'alt', 'time'),
+                             transform_mapping=None,
+                             scatter_kwargs = {}
+                             ):
+        """ Set 4d_names to the spatial coordinate names in d that provide 
+            longitude, latitude, altitude, and time. Default of 
+            lon, lat, alt, and time which are assumed to be in deg, deg, meters, seconds
+        
+            entries in the scatter_kwargs dictionary are passed as kwargs to the matplotlib
+            scatter call.
+        """
         # Set up dataset -> time-height bound filter -> brancher
         branch = Branchpoint([])
         brancher = branch.broadcast()
@@ -47,8 +62,10 @@ class LMAController(object):
         # therefore, add some padding. filtered again later after projection.
         
         quality_filter = BoundsFilter(target=brancher, bounds=self.bounds).filter()
-        
-        transform_mapping = {'z':('alt', (lambda v: (v[0]*1.0e3 - 1.0e3, v[1]*1.0e3 + 1.0e3)) ) }
+        if transform_mapping is None:
+            transform_mapping = self.z_alt_mapping
+        # Use 'time', which is the name in panels.bounds, and not names4d[3], which should
+        # is linked to 'time' by transform_mapping if necessary
         bound_filter = BoundsFilter(target=quality_filter, bounds=panels.bounds, 
                                     restrict_to=('time'), transform_mapping=transform_mapping)
         filterer = bound_filter.filter()
@@ -57,8 +74,9 @@ class LMAController(object):
         # Set up brancher -> coordinate transform -> final_filter -> mutli-axis scatter updater
         scatter_ctrl = PanelsScatterController(
                             panels=panels, 
-                            color_field='time', 
-                            default_color_bounds=self.default_color_bounds)
+                            color_field=names4d[3], 
+                            default_color_bounds=self.default_color_bounds,
+                            **scatter_kwargs)
         scatter_outlet_broadcaster = scatter_ctrl.branchpoint
         scatter_updater = scatter_outlet_broadcaster.broadcast() 
         final_bound_filter = BoundsFilter(target=scatter_updater, bounds=panels.bounds)
@@ -66,7 +84,7 @@ class LMAController(object):
         cs_transformer = panels.cs.project_points(
                             target=final_filterer, 
                             x_coord='x', y_coord='y', z_coord='z', 
-                            lat_coord='lat', lon_coord='lon', alt_coord='alt',
+                            lat_coord=names4d[1], lon_coord=names4d[0], alt_coord=names4d[2],
                             distance_scale_factor=1.0e-3)
         branch.targets.add(cs_transformer)
         
@@ -166,10 +184,33 @@ class LMAController(object):
                             target=d.update(index_name='hdf_row_idx',
                                             field_names=['charge']), 
                                             item_name='charge').modify())
-        branch_to_scatter_artists.targets.add(charge_lasso.cache_segment.cache_segment())
+        branch_to_scatter_artists.targets.add(charge_lasso.cache_segment.cache_segment())            
+        
         return d, post_filter_brancher, scatter_ctrl, charge_lasso
         
-
+    def load_hdf5_flashes_to_panels(self, panels, hdf5dataset):
+        """ Set up a flash dataset display. The sole argument is usually the HDF5 
+            LMA dataset returned by a call to self.load_hdf5_to_panels """
+        from hdf5_lma import HDF5FlashDataset
+        if hdf5dataset.flash_table is not None:
+            flash_d = HDF5FlashDataset(hdf5dataset)
+            transform_mapping = {}
+            transform_mapping['time'] = ('start', (lambda v: (v[0], v[1])) )
+            transform_mapping['lat'] = ('init_lat', (lambda v: (v[0], v[1])) )
+            transform_mapping['lon'] = ('init_lon', (lambda v: (v[0], v[1])) )
+            transform_mapping['z'] = ('init_alt',  (lambda v: (v[0]*1.0e3 - 1.0e3, v[1]*1.0e3 + 1.0e3)) )
+            flash_post_filter_brancher, flash_scatter_ctrl = self.pipeline_for_dataset(flash_d, panels, 
+                    transform_mapping=transform_mapping, 
+                    names4d=('init_lon', 'init_lat', 'init_alt', 'start') )
+            for art in flash_scatter_ctrl.artist_outlet_controllers:
+                # there is no time variable, but the artist updater is set to expect
+                # time. Patch that up.
+                if art.coords == ('time', 'z'):
+                    art.coords = ('start', 'z')
+                # Draw flash markers in a different style
+                art.artist.set_edgecolor('k')
+        self.flash_datasets.add(flash_d)
+        return flash_d, flash_post_filter_brancher, flash_scatter_ctrl
 
 class LassoChargeController(LassoPayloadController):
     """ The "charge" attribute is one of {-1, 0, 1} to set 
