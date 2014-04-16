@@ -175,9 +175,9 @@ class LMAController(object):
         
         return d
         
-    def load_hdf5_to_panels(self, panels, LMAfileHDF):
+    def load_hdf5_to_panels(self, panels, LMAfileHDF, scatter_kwargs={}):
         d = self.read_hdf5(LMAfileHDF)
-        post_filter_brancher, scatter_ctrl = self.pipeline_for_dataset(d, panels)
+        post_filter_brancher, scatter_ctrl = self.pipeline_for_dataset(d, panels, scatter_kwargs=scatter_kwargs)
         branch_to_scatter_artists = scatter_ctrl.branchpoint
         charge_lasso = LassoChargeController(
                             target=ItemModifier(
