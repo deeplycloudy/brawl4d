@@ -2,7 +2,7 @@
     Balloons, Radar, and Aircraft with Lightning = BRAWL.
 
 """
-
+import datetime
 import numpy as np
 
 from stormdrain.bounds import BoundsFilter
@@ -17,6 +17,15 @@ from stormdrain.support.matplotlib.formatters import SecDayFormatter
 from stormdrain.support.coords.filters import CoordinateSystemController
 
 from stormdrain.support.matplotlib.poly_lasso import PolyLasso
+
+
+def redraw(panels):
+    """ this function forces a manual redraw / re-flow of the data to the plot.
+    
+    """
+    get_exchange('SD_bounds_updated').send(panels.bounds)
+    get_exchange('SD_reflow_start').send('Manual redraw')
+    get_exchange('SD_reflow_done').send('Manual redraw complete')
 
 
 class PanelLasso(object):
