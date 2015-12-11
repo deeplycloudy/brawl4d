@@ -1,5 +1,4 @@
 import numpy as np
-import datetime
 
 from collection import RadarFileCollection
 from pyart.core.transforms import antenna_vectors_to_cartesian, corner_to_point
@@ -11,7 +10,7 @@ import vispy.app
 # from vispy.scene.widgets import ViewBox
 from vispy.scene.visuals import Mesh, Text
 from vispy.geometry import MeshData
-from vispy.scene import STTransform, ChainTransform #MatrixTransform,
+from vispy.scene import STTransform, ChainTransform, MatrixTransform
 
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize
@@ -22,10 +21,12 @@ import glob
 class Canvas(vispy.scene.SceneCanvas):
     def __init__(self, size=(800, 800), name="Radar Loop",
                  timer_interval=1.0,
+                 num_radars=1,
                  radar_filenames=None,
                  radar_latlons=None,
                  radar_fields=None,
-                 time_start=None, time_end=None):
+                 time_start=None, time_end=None,
+                 loop_step=10, image_duration=10):
 
         '''
         Parameters
@@ -36,35 +37,52 @@ class Canvas(vispy.scene.SceneCanvas):
             Name to use in window label.
         timer_interval : float
             Interval at which to update data in window.
+        num_radars : int
+            The number of radars to display.
         radar_filenames : list
             List of radar filenames to process. This can be a list of lists
-            if multiple radars are desired.
+            if multiple radars are desired. num_radars must be > 1.
         radar_latlons : list of tuples
             List of (latitude, longitude) coordinates. This can be a list
-            the same length as radar_filenames.
-        time_start: datetime instance
+            the same length as radar_filenames. num_radars must be > 1.
+        time_start : datetime instance
             Start time to use for subset.
-        time_end: datetime instance
+        time_end : datetime instance
             End time to use for subset.
-
+        loop_step : float
+            Seconds between image update in frame.
+        image_duration : float
+            Seconds that each image will last in frame.
         '''
         # self.vb = scene.widgets.ViewBox(parent=self.scene, border_color='b')
         # vb.camera.rect = 0, 0, 1, 1
 
         # self.rotation = MatrixTransform()
 
-        # Prepare some variables if two radars are chosen
+        # Perform a couple of checks
         if radar_filenames is None:
             print("Must provide a list of filenames!")
             return
+        if (num_radars > 1) & (len(radar_filenames) != num_radars) & (len(radar_latlons) != num_radars):
+            print("ERROR: Must provide filenames and lat-lons for each radar!")
+            return
 
-###        self.rfc = []
-        self.rfc = RadarFileCollection(filenames)
-        self.rfc_88d = RadarFileCollection(filenames_88d)
-
-        # Store the passed variables
+        # Prepare some variables if two radars are chosen
+        self.radar_filenames = radar_filenames
         self.t_start = time_start
         self.t_end = time_end
+        self.rnum = num_radars
+        self.loop_dt = np.timedelta64(loop_step * 1000000000, 'ns')
+        self.loop_duration = np.timedelta64(image_duration * 1000000000, 'ns')
+
+        # Read in the radar files into a collection
+        self.rfc = []
+        self.rfc = []
+        for ii in range(self.rnum):
+            self.rfc.append(RadarFileCollection(self.radar_filenames[ii]))
+
+##        self.rfc = RadarFileCollection(filenames)
+        self.rfc_88d = RadarFileCollection(filenames_88d)
 
         # Initialize variables for later use
         self.dx, self.dy = [], []
@@ -115,7 +133,7 @@ class Canvas(vispy.scene.SceneCanvas):
         for a_mesh in self.meshes:
             self.rot_view.add(a_mesh)
 
-##        self.unfreeze() # allow addition of new attributes to the canvas
+        self.unfreeze() # allow addition of new attributes to the canvas
         self.t1 = Text('Time', parent=self.scene, color='white')
         self.t1.font_size = 18
         self.t1.pos = self.size[0] // 2, self.size[1] // 10
@@ -139,9 +157,8 @@ class Canvas(vispy.scene.SceneCanvas):
 
         # mesh.transform = ChainTransform([STTransform(translate=(0, 0, 0),
         #                                              scale=(1.0e-3, 1.0e-3, 1.0e-3) )])
-##        mesh.transform = vispy.scene.transforms.MatrixTransform()
-##        mesh.transform.scale([1./1000, 1./1000, 1./1000])
-        mesh.transform = vispy.scene.transforms.STTransform(translate=(0, 0, 0),scale=([1./1000, 1./1000, 1./1000]))
+        mesh.transform = vispy.scene.transforms.MatrixTransform()
+        mesh.transform.scale([1./1000, 1./1000, 1./1000])
         # mesh.transform.shift([-.2, -.2, -.2])
         return mesh
 
@@ -149,15 +166,11 @@ class Canvas(vispy.scene.SceneCanvas):
         if self.t_start is not None:
             self.loop_start = self.t_start
         else:
-            self.loop_start = np.datetime64(np.min(self.rfc_88d.times.values()), 'ns')
-##        self.loop_dt = datetime.timedelta(seconds=10)
-        self.loop_dt = np.timedelta64(10000000000, 'ns')
+            self.loop_start = np.datetime64(np.min(self.rfc[0].times.values()), 'ns')
         if self.t_end is not None:
             self.loop_end  = self.t_end
         else:
-            self.loop_end = np.datetime64(np.max(self.rfc_88d.times.values()), 'ns')
-##        self.loop_duration = datetime.timedelta(seconds=10)
-        self.loop_duration = np.timedelta64(10000000000, 'ns')
+            self.loop_end = np.datetime64(np.max(self.rfc[0].times.values()), 'ns')
         self.loop_current = self.loop_start
 
     def loop_radar(self, event):
@@ -189,22 +202,22 @@ class Canvas(vispy.scene.SceneCanvas):
 #             self.radar_mesh.set_data(vertices=verts, faces=faces, face_colors=face_colors)
 
         # ----- Do 88D data -----
-##        base88d_field = 'reflectivity'
-        # base88d_field = 'spectrum_width'
-        r,az,el,t,data = self.rfc_88d.sweep_data_for_time_range(current,
+        for ii in range(self.rnum):
+            r, az, el, t, data = self.rfc[ii].sweep_data_for_time_range(current,
                                                        current+self.loop_duration,
                                                        fieldnames=(self.radar_fields[0],))
-        if r is not None:
-            if (el.mean() < 2.0):
-                d = data[self.radar_fields[0]][1:-1, 1:300]
-                # print "Found 88D", r.shape, az.shape, el.shape, d.shape
-                # print r.min(), r.max(), el.min(), el.max(), az.min(), az.max(), d.min(), d.max()
-                verts, faces, face_colors = self._make_plot(r[1:300], az[1:-1], el[1:-1],
-                                                            d, vmin=-25.0, vmax=80.0, cm=self.DZcm)
-                                                            # d, vmin=0.0, vmax=0.4, cm=self.SWcm)
-                                                            # d, vmin=-32.0, vmax=32.0, cm=self.VRcm)
-                self.mesh_88d.set_data(vertices=verts, faces=faces, face_colors=face_colors)
-                face_colors[:,3] = 0.5
+            if r is not None:
+                if (el.mean() < 2.0):
+                    d = data[self.radar_fields[ii]][1:-1, 1:300]
+                    # print "Found 88D", r.shape, az.shape, el.shape, d.shape
+                    # print r.min(), r.max(), el.min(), el.max(), az.min(), az.max(), d.min(), d.max()
+                    verts, faces, face_colors = self._make_plot(
+                                                   r[1:300], az[1:-1], el[1:-1],
+                                                   d, vmin=-25.0, vmax=80.0, cm=self.DZcm)
+                                                # d, vmin=0.0, vmax=0.4, cm=self.SWcm)
+                                                # d, vmin=-32.0, vmax=32.0, cm=self.VRcm)
+                    self.mesh_88d.set_data(vertices=verts, faces=faces, face_colors=face_colors)
+                    face_colors[:,3] = 0.5
 
         # ----- Update plot -----
         self.t1.text='{0} UTC'.format(current)
@@ -220,11 +233,11 @@ class Canvas(vispy.scene.SceneCanvas):
             after replacing missing values with vmin, so vmin should be less
             than the minimum data value
         """
-        x,y,z = antenna_vectors_to_cartesian(r,az,el, edges=True)
+        x, y, z = antenna_vectors_to_cartesian(r, az, el, edges=True)
         x += dx
         y += dy
         # print(x.shape, y.shape, z.shape, d.shape)
-        verts, faces = mesh_from_quads(x,y,z)
+        verts, faces = mesh_from_quads(x, y, z)
 
         squashed = d.filled(vmin).flatten()
         face_colors = np.empty((faces.shape[0], 4))
@@ -233,13 +246,13 @@ class Canvas(vispy.scene.SceneCanvas):
             squashed /= (vmax-vmin) # squashed.max()
             # print squashed.min(), squashed.max()
             # print(face_colors[0::2,0].shape, squashed.shape)
-            face_colors[0::2,0] = squashed # d.flat
-            face_colors[0::2,1] = squashed # d.flat
-            face_colors[0::2,2] = squashed # d.flat
-            face_colors[1::2,0] = squashed # d.flat
-            face_colors[1::2,1] = squashed # d.flat
-            face_colors[1::2,2] = squashed # d.flat
-            face_colors[:,3] = 1.0 # transparency
+            face_colors[0::2, 0] = squashed # d.flat
+            face_colors[0::2, 1] = squashed # d.flat
+            face_colors[0::2, 2] = squashed # d.flat
+            face_colors[1::2, 0] = squashed # d.flat
+            face_colors[1::2, 1] = squashed # d.flat
+            face_colors[1::2, 2] = squashed # d.flat
+            face_colors[:, 3] = 1.0 # transparency
         else:
             colors = cm.to_rgba(squashed)
             face_colors[0::2] = colors
@@ -266,11 +279,11 @@ if __name__ == '__main__':
 
 # filenames = glob.glob('/data/20140607/Ka2/Ka2140608031*')#[5:10]
 # filenames_88d = glob.glob('/data/20140607/88D/KLBB20140608_031*')
-# t_start = datetime.datetime(2014,6,8,3,16,29)
+#    t_start = np.datetime64('2014-06-08T03:16:29Z', 'ns')
 
 # filenames = glob.glob('/data/20140607/Ka2/Ka2140608033*')#[5:10]
 # filenames_88d = glob.glob('/data/20140607/88D/KLBB20140608_033*')
-# t_start = datetime.datetime(2014,6,8,3,39,05)
+#    t_start = np.datetime64('2014-06-08T03:39:05Z', 'ns')
 
 
 
@@ -282,8 +295,8 @@ if __name__ == '__main__':
 #
 # filenames = glob.glob('/data/20140607/Ka2/Ka2140608034*')#[5:10]
 # filenames_88d = glob.glob('/data/20140607/88D/KLBB20140608_034*')
-# t_start = datetime.datetime(2014,6,8,3,40,0)
-# t_end  = datetime.datetime(2014,6,8,3,50,0)
+#    t_start = np.datetime64('2014-06-08T03:40:00Z', 'ns')
+#    t_end  = np.datetime64('2014-06-08T03:50:00Z', 'ns')
 
 #-------------------
 
@@ -293,12 +306,14 @@ if __name__ == '__main__':
 ##    t_end  = datetime.datetime(2014,6,8,3,20,0)
     t_start = np.datetime64('2014-06-08T03:10:00Z', 'ns')
     t_end  = np.datetime64('2014-06-08T03:20:00Z', 'ns')
+#    dloop, dimage = 10, 10
 
     canvas = Canvas(
-                    radar_filenames=filenames_88d,
+                    radar_filenames=[filenames_88d],
                     radar_latlons=[(33.654140472412109, -101.81416320800781),
                                    (33.73732, -101.84326)],
                     time_start=t_start, time_end=t_end,
+##                    loop_step=dloop, image_duration=dimage
                     )
     vispy.app.run()
 # canvas.radar_mesh.set_data(self, vertices=None, faces=None, vertex_colors=None, face_colors=None, meshdata=None, color=None)

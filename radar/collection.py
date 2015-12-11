@@ -16,7 +16,6 @@ def data_for_ray_slice(radar, ray_sl, fieldnames=None):
         corresponding to the fieldnames. If fieldname is None,
         no data will be returned. Fieldnames should be a sequence of field
         names. A data dictionary is returned with a key for each of the field names.
-
         ray_sl is typically found from the radar's sweep index record.
         For some sweep id N, this is:
         ray_sl = slice( radar.sweep_start_ray_index['data'][N],
@@ -47,7 +46,6 @@ def iter_sweep_data(radar, fieldnames):
 
 class RadarFileCollection(object):
     """
-
     """
     def __init__(self, filenames):
         self.filenames=filenames
@@ -87,37 +85,27 @@ class RadarFileCollection(object):
     def sweep_for_time_range(self, t0, t1, overlap_idx=0):
         """ Given some time range t0, t1 return the closest sweep to that time.
             t0 and t1 are datetime objects
-
             If there is only one sweep that overlaps, return it.
-
             overlap_idx = 0: (default) returns the first sweep with overlap
             overlap_idx = -1: returns the last sweep with overlap
             So, the default behavior is to return the first sweep to have any overlap.
-
             Returns filename, sweep_slice.
-
             Unimplemented
             -------------
             If there are two sweeps that overlap, one could:
                 return first or last, or the one with the most overlap
-
             With more than two sweeps, the first and last will have partial overlap
                 return first or last partial overlap
                 return the first or last that fully overlaps
                 return the sweep with most overlap
                     choosing the first or last of those if there are several of the same length
-
-
-
                                    t0           t1
                                    |            |
             ... -------------- -------------- ------------------ -------------- ...
                 ta3        tb3 ta4        tb4 ta5            tb5 ta6        tb6
-
             conditions for some overlap
             t1 > ta4  so t1 - ta4 > 0
             t0 < tb4  so t0 - tb4 < 0
-
         """
 
         #target = pandas.DataFrame([(t0, t1),], columns=('start', 'end'))
@@ -140,7 +128,6 @@ class RadarFileCollection(object):
         """ return r,az,el,t,data corresponding to the fieldnames. If fieldname is None,
             no data will be returned. Fieldnames should be a sequence of field
             names. A data dictionary is returned with a key for each of the field names.
-
             t0, t1 and extra kwargs are passed to self.sweep_for_time_range
         """
         filename, ray_slice = self.sweep_for_time_range(t0, t1, **kwargs)

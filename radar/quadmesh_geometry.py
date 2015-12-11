@@ -9,7 +9,7 @@ import vispy.app
 # from vispy.scene.visuals.modular_mesh import ModularMesh
 from vispy.scene.visuals import Mesh
 from vispy.geometry import MeshData
-from vispy.scene import STTransform##, MatrixTransform
+from vispy.scene import STTransform , MatrixTransform
 
 def synthetic_field(x,y):
     # Trapp and Doswell (2000, Mon. Weather Rev.) analytic input field
