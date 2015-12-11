@@ -104,6 +104,7 @@ def mesh_from_quads(x,y,z):
     # the edges together.
     # Should look like (0,0,0,1,1,1,2,2,2,3,3,3) for N-1=3 and M-1=4
     adjust_start = (np.arange(M-1, dtype=np.int32)[:,None]*np.ones(N-1, dtype=np.int32)[None,:]).flatten()
+#    adjust_start = (np.arange(M-1, dtype='i4')[:,None]*np.ones(N-1, dtype='i4')[None,:]).flatten()
     q_range+=adjust_start
 
     # even (0,2,4,...) triangles

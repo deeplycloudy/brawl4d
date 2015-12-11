@@ -149,15 +149,15 @@ class Canvas(vispy.scene.SceneCanvas):
         if self.t_start is not None:
             self.loop_start = self.t_start
         else:
-            self.loop_start = np.datetime64(np.min(self.rfc_88d.times.values()), 's')
+            self.loop_start = np.datetime64(np.min(self.rfc_88d.times.values()), 'ns')
 ##        self.loop_dt = datetime.timedelta(seconds=10)
-        self.loop_dt = np.timedelta64(10, 's')
+        self.loop_dt = np.timedelta64(10000000000, 'ns')
         if self.t_end is not None:
             self.loop_end  = self.t_end
         else:
-            self.loop_end = np.datetime64(np.max(self.rfc_88d.times.values()), 's')
+            self.loop_end = np.datetime64(np.max(self.rfc_88d.times.values()), 'ns')
 ##        self.loop_duration = datetime.timedelta(seconds=10)
-        self.loop_duration = np.timedelta64(10, 's')
+        self.loop_duration = np.timedelta64(10000000000, 'ns')
         self.loop_current = self.loop_start
 
     def loop_radar(self, event):
@@ -196,7 +196,7 @@ class Canvas(vispy.scene.SceneCanvas):
                                                        fieldnames=(self.radar_fields[0],))
         if r is not None:
             if (el.mean() < 2.0):
-                d = data[base88d_field][1:-1, 1:300]
+                d = data[self.radar_fields[0]][1:-1, 1:300]
                 # print "Found 88D", r.shape, az.shape, el.shape, d.shape
                 # print r.min(), r.max(), el.min(), el.max(), az.min(), az.max(), d.min(), d.max()
                 verts, faces, face_colors = self._make_plot(r[1:300], az[1:-1], el[1:-1],
@@ -291,8 +291,8 @@ if __name__ == '__main__':
     filenames_88d = glob.glob('/Users/guy/data/test/brawl_vispy/88D/KLBB20140608_031*')
 ##    t_start = datetime.datetime(2014,6,8,3,10,0)
 ##    t_end  = datetime.datetime(2014,6,8,3,20,0)
-    t_start = np.datetime64('2014-06-08T03:10:00Z', 's')
-    t_end  = np.datetime64('2014-06-08T03:20:00Z', 's')
+    t_start = np.datetime64('2014-06-08T03:10:00Z', 'ns')
+    t_end  = np.datetime64('2014-06-08T03:20:00Z', 'ns')
 
     canvas = Canvas(
                     radar_filenames=filenames_88d,

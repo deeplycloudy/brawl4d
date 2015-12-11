@@ -81,7 +81,7 @@ class RadarFileCollection(object):
             vcp = diagnose_vcp(radar)
             for (swp_sl, swp_ta, swp_tb), angle in zip(self._iter_sweep_time_range(fname), vcp):
 
-                yield fname, swp_sl, swp_ta, swp_tb, mode, angle
+                yield fname, swp_sl, np.datetime64(swp_ta, 'ns'), np.datetime64(swp_tb, 'ns'), mode, angle
 
 
     def sweep_for_time_range(self, t0, t1, overlap_idx=0):
@@ -121,7 +121,11 @@ class RadarFileCollection(object):
         """
 
         #target = pandas.DataFrame([(t0, t1),], columns=('start', 'end'))
-        overlap = ((t0 - self.sweep_table['end'].values) < 0) & ((t1 - self.sweep_table['start'].values) > 0 )
+##        print("t0/t1 type = {0}/{1}".format(np.dtype(t0), np.dtype(t1)))
+##        print("sweep_table['end'] type = {0}".format(np.dtype(self.sweep_table['end'])))
+##        print("sweep_table['start'] type = {0}".format(np.dtype(self.sweep_table['start'])))
+        dt_zero = np.timedelta64(0,'ns')
+        overlap = ((t0 - self.sweep_table['end'].values) < dt_zero) & ((t1 - self.sweep_table['start'].values) > dt_zero )
         sweeps = self.sweep_table[overlap]
         if len(sweeps) > 0:
             selection = np.zeros(len(sweeps), dtype=bool)
