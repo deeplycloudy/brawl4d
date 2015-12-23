@@ -39,12 +39,12 @@ class Canvas(vispy.scene.SceneCanvas):
             Interval at which to update data in window.
         num_radars : int
             The number of radars to display.
-        radar_filenames : list
-            List of radar filenames to process. This can be a list of lists
-            if multiple radars are desired. num_radars must be > 1.
+        radar_filenames : list of lists of radar filenames, 
+            one for each radar in num_radars
         radar_latlons : list of tuples
-            List of (latitude, longitude) coordinates. This can be a list
-            the same length as radar_filenames. num_radars must be > 1.
+            List of tuples of (latitude, longitude) coordinates, one for 
+            each radar in num_radars. The first radar's location is used
+            as the coordinate center.
         time_start : datetime instance
             Start time to use for subset.
         time_end : datetime instance
@@ -77,12 +77,11 @@ class Canvas(vispy.scene.SceneCanvas):
 
         # Read in the radar files into a collection
         self.rfc = []
-        self.rfc = []
         for ii in range(self.rnum):
             self.rfc.append(RadarFileCollection(self.radar_filenames[ii]))
 
 ##        self.rfc = RadarFileCollection(filenames)
-        self.rfc_88d = RadarFileCollection(filenames_88d)
+        # self.rfc_88d = RadarFileCollection(filenames_88d)
 
         # Initialize variables for later use
         self.dx, self.dy = [], []
@@ -92,31 +91,30 @@ class Canvas(vispy.scene.SceneCanvas):
             self.radar_fields = [radar_fields[0]]
 
         # Find corner points if required
-        if len(radar_latlons) > 1:
-            for num in range(1, len(radar_latlons)):
-                dx_tmp, dy_tmp = corner_to_point(radar_latlons[num], radar_latlons[num-1]) #meters
-                self.dx.append(dx_tmp)
-                self.dy.append(dy_tmp)
-                try:
-                    self.radar_fields.append(radar_fields[num])
-                except:
-                    self.radar_fields.append('reflectivity')
+        # if len(radar_latlons) > 1:
+        for num in range(0, len(radar_latlons)):
+            dx_tmp, dy_tmp = corner_to_point(radar_latlons[0], radar_latlons[num]) #meters
+            self.dx.append(dx_tmp)
+            self.dy.append(dy_tmp)
+            try:
+                self.radar_fields.append(radar_fields[num])
+            except:
+                self.radar_fields.append('reflectivity')
 
-        # Generate dummy data to initialize the Mesh instance
+        # Generate dummy data to initialize the Mesh instances
         x, y, z, d = radar_example_data()
         # print x.shape, y.shape, z.shape
         # print d.shape, d.min(), d.max()
-        mesh = self._init_mesh(x, y, z, d)
-        mesh_88d = self._init_mesh(x, y, z, d)
+        self.meshes = tuple( (self._init_mesh(x, y, z, d) for i in range(self.rnum)) )
 
         # Use colormapping class from matplotlib
         self.DZcm = ScalarMappable(norm=Normalize(-25,80), cmap='gist_ncar')
         self.VRcm = ScalarMappable(norm=Normalize(-32,32), cmap='PuOr_r')
         self.SWcm = ScalarMappable(norm=Normalize(0.0,5.0), cmap='cubehelix_r')
 
-        self.radar_mesh = mesh
-        self.mesh_88d = mesh_88d
-        self.meshes = (mesh, mesh_88d)
+        # self.radar_mesh = mesh
+        # self.mesh_88d = mesh_88d
+        # self.meshes = (mesh, mesh_88d)
 
         self.rot_view = None
 
@@ -180,44 +178,61 @@ class Canvas(vispy.scene.SceneCanvas):
         self.loop_current = current + self.loop_dt
 
         # ----- Do Ka data -----
-#         ka_field = 'spectrum_width'
-#         # ka_field = 'reflectivity'
-#         r,az,el,t,data = self.rfc.sweep_data_for_time_range(current,
-#                                                        current+self.loop_duration,
-#                                                        fieldnames=(ka_field,))
-#         if r is not None:
-#             if np.abs(az.mean() - 315.0) > 10:
-#                 az += 90.0
-#             d = data[ka_field][1:-1, 1:-150]
-#
-#             # print "Found Ka", r.shape, az.shape, el.shape, d.shape
-#             # print r.min(), r.max(), el.min(), el.max(), az.min(), az.max(), d.min(), d.max()
-#             verts, faces, face_colors = self._make_plot(r[1:-150], az[1:-1], el[1:-1],
-#                                                         # d, vmin=-32.0, vmax=25.0, cm=self.DZcm,
-#                                                         d, vmin=-1.0, vmax=5.0, cm=self.SWcm,
-#                                                         dx=-dx_ka, dy=-dy_ka)
-#
-#             # print('vert range', verts.min(), verts.max())
-#
-#             self.radar_mesh.set_data(vertices=verts, faces=faces, face_colors=face_colors)
+        # ka_field = 'spectrum_width'
+        # # ka_field = 'reflectivity'
+        # r,az,el,t,data = self.rfc.sweep_data_for_time_range(current,
+        #                                                current+self.loop_duration,
+        #                                                fieldnames=(ka_field,))
+        # if r is not None:
+        #     if np.abs(az.mean() - 315.0) > 10:
+        #         az += 90.0
+        #     d = data[ka_field][1:-1, 1:-150]
+        #
+        #     # print "Found Ka", r.shape, az.shape, el.shape, d.shape
+        #     # print r.min(), r.max(), el.min(), el.max(), az.min(), az.max(), d.min(), d.max()
+        #     verts, faces, face_colors = self._make_plot(r[1:-150], az[1:-1], el[1:-1],
+        #                                                 # d, vmin=-32.0, vmax=25.0, `cm=self.DZcm,
+        #                                                 d, vmin=-1.0, vmax=5.0, cm=self.SWcm,
+        #                                                 dx=-dx_ka, dy=-dy_ka)
+        #
+        #     # print('vert range', verts.min(), verts.max())
+        #
+        #     self.radar_mesh.set_data(vertices=verts, faces=faces, face_colors=face_colors)
 
         # ----- Do 88D data -----
         for ii in range(self.rnum):
+            # need to get a common set of fields and spatial coordinate ranges or
+            # somehow pass those in.
             r, az, el, t, data = self.rfc[ii].sweep_data_for_time_range(current,
                                                        current+self.loop_duration,
-                                                       fieldnames=(self.radar_fields[0],))
+                                                       fieldnames=(self.radar_fields[ii],))
+            # if r is not None:
+            #     if (el.mean() < 2.0):
+            #         d = data[self.radar_fields[ii]][1:-1, 1:300]
+            #         # print "Found 88D", r.shape, az.shape, el.shape, d.shape
+            #         # print r.min(), r.max(), el.min(), el.max(), az.min(), az.max(), d.min(), d.max()
+            #         verts, faces, face_colors = self._make_plot(
+            #                                        r[1:300], az[1:-1], el[1:-1],
+            #                                        d, vmin=-25.0, vmax=80.0, cm=self.DZcm)
+            #                                     # d, vmin=0.0, vmax=0.4, cm=self.SWcm)
+            #                                     # d, vmin=-32.0, vmax=32.0, cm=self.VRcm)
+            #         self.meshes[ii].set_data(vertices=verts, faces=faces, face_colors=face_colors)
+            #         face_colors[:,3] = 0.5
+
             if r is not None:
-                if (el.mean() < 2.0):
-                    d = data[self.radar_fields[ii]][1:-1, 1:300]
-                    # print "Found 88D", r.shape, az.shape, el.shape, d.shape
-                    # print r.min(), r.max(), el.min(), el.max(), az.min(), az.max(), d.min(), d.max()
-                    verts, faces, face_colors = self._make_plot(
-                                                   r[1:300], az[1:-1], el[1:-1],
-                                                   d, vmin=-25.0, vmax=80.0, cm=self.DZcm)
-                                                # d, vmin=0.0, vmax=0.4, cm=self.SWcm)
-                                                # d, vmin=-32.0, vmax=32.0, cm=self.VRcm)
-                    self.mesh_88d.set_data(vertices=verts, faces=faces, face_colors=face_colors)
-                    face_colors[:,3] = 0.5
+                # trims off one ray on top and bottom since there are some bad rays in the sample data
+                d = data[self.radar_fields[ii]]
+                # print "Found 88D", r.shape, az.shape, el.shape, d.shape
+                # print r.min(), r.max(), el.min(), el.max(), az.min(), az.max(), d.min(), d.max()
+                verts, faces, face_colors = self._make_plot(
+                                               r[0:300], az[1:-1], el[1:-1],
+                                               d[1:-1, 0:300], vmin=-25.0, vmax=80.0, cm=self.DZcm,
+                                               dx=self.dx[ii], dy=self.dy[ii])
+                                            # d, vmin=0.0, vmax=0.4, cm=self.SWcm)
+                                            # d, vmin=-32.0, vmax=32.0, cm=self.VRcm)
+                self.meshes[ii].set_data(vertices=verts, faces=faces, face_colors=face_colors)
+
+
 
         # ----- Update plot -----
         self.t1.text='{0} UTC'.format(current)
@@ -277,8 +292,8 @@ if __name__ == '__main__':
 # Selection of interesting times
 #-------------------
 
-# filenames = glob.glob('/data/20140607/Ka2/Ka2140608031*')#[5:10]
-# filenames_88d = glob.glob('/data/20140607/88D/KLBB20140608_031*')
+    filenames = glob.glob('/data/20140607/Ka2/Ka2140608031*')#[5:10]
+    filenames_88d = glob.glob('/data/20140607/88D/KLBB20140608_031*')
 #    t_start = np.datetime64('2014-06-08T03:16:29Z', 'ns')
 
 # filenames = glob.glob('/data/20140607/Ka2/Ka2140608033*')#[5:10]
@@ -300,8 +315,8 @@ if __name__ == '__main__':
 
 #-------------------
 
-    filenames = glob.glob('/Users/guy/data/test/brawl_vispy/Ka2/Ka2140608031*')#[5:10]
-    filenames_88d = glob.glob('/Users/guy/data/test/brawl_vispy/88D/KLBB20140608_031*')
+    # filenames = glob.glob('/Users/guy/data/test/brawl_vispy/Ka2/Ka2140608031*')#[5:10]
+    # filenames_88d = glob.glob('/Users/guy/data/test/brawl_vispy/88D/KLBB20140608_031*')
 ##    t_start = datetime.datetime(2014,6,8,3,10,0)
 ##    t_end  = datetime.datetime(2014,6,8,3,20,0)
     t_start = np.datetime64('2014-06-08T03:10:00Z', 'ns')
@@ -309,7 +324,10 @@ if __name__ == '__main__':
 #    dloop, dimage = 10, 10
 
     canvas = Canvas(
-                    radar_filenames=[filenames_88d],
+                    radar_filenames=[filenames, filenames_88d],
+                    num_radars = 2,
+                    # radar_filenames=[filenames_88d],
+                    # num_radars = 1,
                     radar_latlons=[(33.654140472412109, -101.81416320800781),
                                    (33.73732, -101.84326)],
                     time_start=t_start, time_end=t_end,
