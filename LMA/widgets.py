@@ -2,7 +2,8 @@
 from __future__ import print_function
 from brawl4d.brawl4d import redraw
 from brawl4d.LMA.controller import LMAController
-from IPython.html import widgets # Widget definitions
+import ipywidgets as widgets
+# from IPython.html import widgets # Widget definitions
 from IPython.display import display # Used to display widgets in the notebook
 from IPython.display import Javascript
 from IPython.display import HTML
@@ -17,101 +18,134 @@ class LMAwidgetController:
 		self.charge_lasso = charge_lasso
 		
 		#Max Chi2 Value:
-		chi2_selection = widgets.BoundedFloatTextWidget(description='Max Chi2:', min='0.0', max='1000.0', value='1')
-		chi2_selection.set_css({
-			'max-width' : '30px',
-		})
+		chi2_selection = widgets.BoundedFloatText(description='Max Chi2:', min='0.0', max='1000.0', value='1')
+		chi2_selection.layout.width = '30px'
 		chi2_selection.on_trait_change(self.max_chi2, 'value')
 		
 		
 		#Station Number Selection:
-		station_number_selection = widgets.DropdownWidget(description='Number of Stations:', 
-				values=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], value=7)
-		station_number_selection.set_css({
-			'background-dropdown': '#888888',
-			'color': 'white',
-		})	
+		station_number_selection = widgets.Dropdown(description='Number of Stations:', 
+				options=[5, 6, 7, 8, 9, 10, 11, 12], value=7)
+		station_number_selection.background_color = '#888888'
+		station_number_selection.color = 'white'
+		# station_number_selection.set_css({
+		# 	'background-dropdown': '#888888',
+		# 	'color': 'white',
+		# })	
 		station_number_selection.on_trait_change(self.number_of_stations, 'value')
 
 		#Charge Lasso and Draw Button:
-		charge_lasso_widget = widgets.RadioButtonsWidget(description='Charge Selection:', values=["-1", "0", "1"], value="-1")
+		# charge_lasso_widget = widgets.RadioButtons(description='Charge Selection:', values=["-1", "0", "1"], value="-1")
+		charge_lasso_widget = widgets.RadioButtons(description='Charge Selection:', options=["-1", "0", "1"], value='-1')
 		charge_lasso_widget.on_trait_change(self.change_lasso_charge, 'value')
 
-		draw_lasso_widget = widgets.ButtonWidget(description='Draw')
-		draw_lasso_widget.set_css({
-			'background': '#888888',
-			'color': 'white',
-		})
+		draw_lasso_widget = widgets.Button(description='Draw')
+		draw_lasso_widget.background_color = '#888888'
+		draw_lasso_widget.color = 'white'
+		# draw_lasso_widget.set_css({
+		# 	'background': '#888888',
+		# 	'color': 'white',
+		# })
 		draw_lasso_widget.on_click(self.lasso_button) 
 
 		#Color Field Selection:
-		color_field_widget = widgets.RadioButtonsWidget(description='Color By:', values=["chi2", "time", "charge"], value="time")
+		color_field_widget = widgets.RadioButtons(description='Color By:', options=["chi2", "time", "charge"], value="time")
+		# color_field_widget = widgets.RadioButtons(description='Color By:', values=["chi2", "time", "charge"], value="time")
 		color_field_widget.on_trait_change(self.change_color_field, 'value')
 
 		#Animate (Slider and Button) Optional Manual Numerical Input commented out:
-		animation_time_widget = widgets.IntSliderWidget(description='Animation Time:', min='0', max='30')
+		animation_time_widget = widgets.IntSlider(description='Animation Time:', min='0', max='30')
 		animation_time_widget.value = '5'
-		# animation_time_widget = widgets.TextWidget(Description='Animation Time')
+		animate_button = widgets.Button(description="Animate")
+		animate_button.layout.display = 'flex'
+		animate_button.layout.align_content = 'flex_end'
+		animate_button.background_color = '#888888'
+		animate_button.color = 'white'
+		# animation_time_widget = widgets.Text(Description='Animation Time')
 		# animation_time_widget.placeholder = "value"
-		animate_button = widgets.ButtonWidget(description="Animate")
-		animate_button.set_css({
-			'display': 'flex',
-			'align-content': 'flex-end',
-			'background': '#888888',
-			'color': 'white',
-		})
+		# animate_button.set_css({
+		# 	'display': 'flex',
+		# 	'align-content': 'flex-end',
+		# 	'background': '#888888',
+		# 	'color': 'white',
+		# })
 		animate_button.on_click(self.run_animation_button)
 
 		#FOR CONTAINERS AND POPUP
-		label = widgets.LatexWidget(value='LMA Tools')
-		label.set_css({
-			'font-size': '20px',
-			'font-weight': 'bold',
-			'align-self': 'center',
-			'padding': '15px',
-			'background': 'd8d8d8',
-		})
+		label = widgets.widget_string.Label(value='LMA Tools')
+		label.font_size = '20px'
+		label.font_weight = 'bold'
+		label.layout.align_self = 'center'
+		label.padding = '15px'
+		label.background_color = '#d8d8d8'
+		# label.set_css({
+		# 	'font-size': '20px',
+		# 	'font-weight': 'bold',
+		# 	'align-self': 'center',
+		# 	'padding': '15px',
+		# 	'background': 'd8d8d8',
+		# })
 
-		LMA_Controlsa = widgets.ContainerWidget()
-		LMA_Controlsa.children = [station_number_selection, charge_lasso_widget, draw_lasso_widget, chi2_selection]
-		LMA_Controlsa.set_css({
-			'display': 'flex',
-			'flex-direction': 'column',
-			# 'max-width': '300px',
-			'flex-flow': 'row wrap',
-			'align-content': 'flex-start',
-			'padding': '10px',
-			'background': '#e8e8e8',
-			'font-weight': 'bold',
-		})
-		LMA_Controlsa.remove_class('vbox')
-		LMA_Controlsa.add_class('hbox')
+		# LMA_Controlsa = widgets.ContainerWidget()
+		# LMA_Controlsa.children = [station_number_selection, charge_lasso_widget, draw_lasso_widget, chi2_selection]
+		# LMA_Controlsa.set_css({
+		# 	'display': 'flex',
+		# 	'flex-direction': 'column',
+		# 	# 'max-width': '300px',
+		# 	'flex-flow': 'row wrap',
+		# 	'align-content': 'flex-start',
+		# 	'padding': '10px',
+		# 	'background': '#e8e8e8',
+		# 	'font-weight': 'bold',
+		# })
+		# LMA_Controlsa.remove_class('vbox')
+		# LMA_Controlsa.add_class('hbox')
+		LMA_Controlsa = widgets.HBox(children = [station_number_selection, 
+			charge_lasso_widget, draw_lasso_widget, chi2_selection])
+		LMA_Controlsa.layout.align_content = 'flex_start'
+		LMA_Controlsa.padding = '10px'
+		LMA_Controlsa.background_color = '#e8e8e8'
+		LMA_Controlsa.font_weight = 'bold'
 
-		LMA_Controlsb = widgets.ContainerWidget()
-		LMA_Controlsb.children = [color_field_widget, animation_time_widget, animate_button]
-		LMA_Controlsb.set_css({
-			'display': 'flex',
-			'flex-flow': 'wrap',
-			'align-items': 'right',
-			'columns': '1',
-			'padding': '10px',
-			'background': '#e8e8e8',
-			'font-weight': 'bold',
-		})
-		LMA_Controlsb.remove_class('vbox')
-		LMA_Controlsb.add_class('hbox')
+		# LMA_Controlsb = widgets.ContainerWidget()
+		# LMA_Controlsb.children = [color_field_widget, animation_time_widget, animate_button]
+		# LMA_Controlsb.set_css({
+		# 	'display': 'flex',
+		# 	'flex-flow': 'wrap',
+		# 	'align-items': 'right',
+		# 	'columns': '1',
+		# 	'padding': '10px',
+		# 	'background': '#e8e8e8',
+		# 	'font-weight': 'bold',
+		# })
+		# LMA_Controlsb.remove_class('vbox')
+		# LMA_Controlsb.add_class('hbox')
+		LMA_Controlsb = widgets.HBox(children = [color_field_widget, 
+			animation_time_widget, animate_button])
+		LMA_Controlsa.layout.align_content = 'right'
+		LMA_Controlsa.padding = '10px'
+		LMA_Controlsa.background_color = '#e8e8e8'
+		LMA_Controlsa.font_weight = 'bold'
 
-		tools_popup = widgets.PopupWidget(description='LMA Control Hub')
-		tools_popup.set_css({
-			'font-size': '14px',
-			'align-self': 'center',
-			'padding': '15px',
-			'border': '5px ridge #989898',
-			'background': '#e8e8e8',
+		# tools_popup = widgets.PopupWidget(description='LMA Control Hub')
+		# tools_popup.set_css({
+		# 	'font-size': '14px',
+		# 	'align-self': 'center',
+		# 	'padding': '15px',
+		# 	'border': '5px ridge #989898',
+		# 	'background': '#e8e8e8',
 
-		})
-		tools_popup.children = [label, LMA_Controlsa, LMA_Controlsb]
-		
+		# })
+		# tools_popup.children = [label, LMA_Controlsa, LMA_Controlsb]
+		tools_popup = widgets.Box(description='LMA Control Hub',
+			children = [label, LMA_Controlsa, LMA_Controlsb])
+		tools_popup.font_size = '14px'
+		tools_popup.layout.align_self = 'center'
+		tools_popup.padding = '15px'
+		tools_popup.border = '5px ridge #989898'
+		tools_popup.background_color = '#e8e8e8'
+
+
 		self.chi2_selection = chi2_selection
 		self.station_number_selection = station_number_selection
 		self.charge_lasso_widget = charge_lasso_widget
