@@ -43,7 +43,7 @@ def radar_example_data():
     
     el = np.radians(30.0)
 
-    all_r  = np.arange(5, 35, 0.75)
+    all_r  = np.arange(5, 50.0, 0.75)
     all_az_deg = np.arange(0,361, 2)    
     all_az = np.radians(all_az_deg)
     
@@ -102,7 +102,7 @@ def mesh_from_quads(x,y,z):
     # When the index along M changes, need to skip ahead to avoid connecting
     # the edges together.
     # Should look like (0,0,0,1,1,1,2,2,2,3,3,3) for N-1=3 and M-1=4
-    adjust_start = (np.arange(M-1)[:,None]*np.ones(N-1)[None,:]).flatten()
+    adjust_start = (np.arange(M-1,dtype='int32')[:,None]*np.ones(N-1,dtype='int32')[None,:]).flatten()
     q_range+=adjust_start
     
     # even (0,2,4,...) triangles
