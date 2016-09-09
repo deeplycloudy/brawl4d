@@ -38,7 +38,7 @@ class LMAController(object):
     def __init__(self, *args, **kwargs):
         super(LMAController, self).__init__(*args, **kwargs)
         self.bounds = Bounds(chi2=(0.0, 1.0), stations=(6, 99))
-        self.default_color_bounds = Bounds(parent=self.bounds, charge=(-1,1))
+        self.default_color_bounds = Bounds(parent=self.bounds, charge=(-1,1), power=(-10,50))
         self.datasets = set()
         self.flash_datasets = set()
     

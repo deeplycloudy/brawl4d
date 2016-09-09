@@ -19,7 +19,7 @@ class LMAwidgetController:
 		
 		#Max Chi2 Value:
 		chi2_selection = widgets.BoundedFloatText(description='Max Chi2:', min='0.0', max='1000.0', value='1')
-		chi2_selection.layout.width = '30px'
+        # chi2_selection.layout.width = '30px'
 		chi2_selection.on_trait_change(self.max_chi2, 'value')
 		
 		
@@ -49,7 +49,7 @@ class LMAwidgetController:
 		draw_lasso_widget.on_click(self.lasso_button) 
 
 		#Color Field Selection:
-		color_field_widget = widgets.RadioButtons(description='Color By:', options=["chi2", "time", "charge"], value="time")
+		color_field_widget = widgets.RadioButtons(description='Color By:', options=["chi2", "time", "charge", "power"], value="time")
 		# color_field_widget = widgets.RadioButtons(description='Color By:', values=["chi2", "time", "charge"], value="time")
 		color_field_widget.on_trait_change(self.change_color_field, 'value')
 
