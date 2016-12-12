@@ -95,12 +95,13 @@ class LMAController(object):
     def flash_stat_printer(self, min_points=10):
         while True:
             ev, fl = (yield)
-            template = "{0} of {1} flashes have > {3} points. Their average area = {2:5.1f} km^2"
-            N = len(fl)
-            good = (fl['n_points'] >= min_points)
-            N_good = len(fl[good])
-            area = np.mean(fl['area'][good])
-            print template.format(N_good, N, area, min_points)
+            if fl is not None:
+                template = "{0} of {1} flashes have > {3} points. Their average area = {2:5.1f} km^2"
+                N = len(fl)
+                good = (fl['n_points'] >= min_points)
+                N_good = len(fl[good])
+                area = np.mean(fl['area'][good])
+                print template.format(N_good, N, area, min_points)
         
     def flash_stats_for_dataset(self, d, selection_broadcaster):
         
@@ -114,12 +115,16 @@ class LMAController(object):
             """
             while True:
                 ev = (yield) # array of event data
-                fl_dat = d.flash_data
+                try:
+                    fl_dat = d.flash_data
                 
-                flash_ids = set(ev[flash_id_key])
-                flashes = np.fromiter(
-                            (fl for fl in fl_dat if fl[flash_id_key] in flash_ids), 
-                            dtype=fl_dat.dtype)
+                    flash_ids = set(ev[flash_id_key])
+                    flashes = np.fromiter(
+                                (fl for fl in fl_dat if fl[flash_id_key] in flash_ids), 
+                                dtype=fl_dat.dtype)
+                except AttributeError:
+                    # There are no flash data in the dataset
+                    flashes = None
                 target.send((ev, flashes))
                 
         selection_broadcaster.targets.add(flash_data_for_selection(flash_stat_brancher))
