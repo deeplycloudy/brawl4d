@@ -8,5 +8,5 @@ setup(name='brawl4d',
     url='https://github.com/deeplycloudy/brawl4d/',
     package_dir={'brawl4d': ''}, # wouldn't be necessary if we reorganized to traditional package layout with brawl4d at the same directory level as the setup.py script.
     packages=['brawl4d', 
-        'brawl4d.LMA', 
+        'brawl4d.LMA', ]
     )
