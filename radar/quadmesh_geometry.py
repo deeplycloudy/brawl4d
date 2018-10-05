@@ -4,11 +4,6 @@
 import numpy as np
 pi = np.pi
 
-import vispy.app
-# from vispy.scene.visuals.modular_mesh import ModularMesh
-from vispy.scene.visuals import Mesh
-from vispy.geometry import MeshData
-from vispy.scene import STTransform, MatrixTransform
 
 def synthetic_field(x,y):
     # Trapp and Doswell (2000, Mon. Weather Rev.) analytic input field    
@@ -67,11 +62,16 @@ def radar_example_data():
     
     return (x_radar_edge, y_radar_edge, z_radar_edge, all_d)
 
-def mesh_from_quads(x,y,z):
+def mesh_from_quads(x,y,z, dup_verts=False):
     """ x, y, z are M x N arrays giving the edge locations for
         a quadrilateral mesh of Nq = (M-1) x (N-1) implied quad faces.
         After conversion to triangles, this is Nf=2*Nq faces.
         Nv = M x N.
+        
+        If the keyword argument dup_verts=True, then x,y,z vertices 
+        will be replicated, such that each quad has its own
+        vertices not shared with other quads. This allows one to specify
+        colors by vertex if coloring by face is not supported.
         
         returns
         vertices : ndarray, shape (Nv, 3) - Vertex coordinates. 
@@ -85,77 +85,150 @@ def mesh_from_quads(x,y,z):
         alternating the triangles' diagonal direction. It would be
         more amenable GL_TRIANGLE_STRIP.
         (1) http://dan.lecocq.us/wordpress/2009/12/25/triangle-strip-for-grids-a-construction/
+        
+        
         """
+    
+    if dup_verts:
+        n_repeat = 2
+    else:
+        n_repeat = 1
+        
     M, N = x.shape
-    Nv = M * N
+    Nv = (M * n_repeat) * (N * n_repeat)
     Nq = (M-1) * (N-1)
     Nf = 2*Nq
     verts = np.empty((Nv, 3), dtype='f4')
     faces = np.empty((Nf, 3), dtype='i4')
     
-    verts[:,0] = x.flat
-    verts[:,1] = y.flat
-    verts[:,2] = z.flat
+    xv = np.repeat(np.repeat(x,n_repeat,axis=0), n_repeat, axis=1)
+    yv = np.repeat(np.repeat(y,n_repeat,axis=0), n_repeat, axis=1)
+    zv = np.repeat(np.repeat(z,n_repeat,axis=0), n_repeat, axis=1)
+    
+    verts[:,0] = xv.flat
+    verts[:,1] = yv.flat
+    verts[:,2] = zv.flat
         
-    q_range = np.arange(Nq, dtype='i4')
+    q_range = np.arange(Nq, dtype='i4')*n_repeat
+    q_range += (N*n_repeat + 1)*(n_repeat-1)
     
     # When the index along M changes, need to skip ahead to avoid connecting
     # the edges together.
-    # Should look like (0,0,0,1,1,1,2,2,2,3,3,3) for N-1=3 and M-1=4
-    adjust_start = (np.arange(M-1,dtype='int32')[:,None]*np.ones(N-1,dtype='int32')[None,:]).flatten()
-    q_range+=adjust_start
+    adjust_start = (np.arange(M-1, dtype='i4')[:,None] * 
+                    np.ones(N-1, dtype='i4')[None,:]).flatten()
+    adjust_adjust = adjust_start * (N*n_repeat+1)
+    q_range+=adjust_start + adjust_adjust*(n_repeat-1)
+
+    # for N-1=3 and M-1=4 and n_repeat=1, the final values are
+    # adjust_start = (0,0,0,1,1,1,2,2,2,3,3,3) 
+    # q_range = (0,1,2,4,5,6,8,9,10,12,13,14)
+
     
+    # repeated arrays for N-1=4, M-1=3 -- need to redo this block with correct N, M
+    # xv=array([[0, 0, 1, 1, 2, 2, 3, 3, 4, 4],
+    #        [0, 0, 1, 1, 2, 2, 3, 3, 4, 4],
+    #        [0, 0, 1, 1, 2, 2, 3, 3, 4, 4],
+    #        [0, 0, 1, 1, 2, 2, 3, 3, 4, 4],
+    #        [0, 0, 1, 1, 2, 2, 3, 3, 4, 4],
+    #        [0, 0, 1, 1, 2, 2, 3, 3, 4, 4],
+    #        [0, 0, 1, 1, 2, 2, 3, 3, 4, 4],
+    #        [0, 0, 1, 1, 2, 2, 3, 3, 4, 4]])
+
+    # yv=array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    #        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    #        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    #        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    #        [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+    #        [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+    #        [3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+    #        [3, 3, 3, 3, 3, 3, 3, 3, 3, 3]])    
+    #     First quad is 11, 12, 21, 22, which becomes and upper and lower triangle 
+    #         (first column of expanded indices below)
+    #     Second quad is 13, 14, 23, 24
+    #     Third quad is 15, 16, 25, 26
+    #     Fourth quad is 17, 18, 27, 28 --- skip down two rows now, adding 20=N*n_repeat*n_repeat to the first 
+    #     Fifth quad is 31, 32, 41, 42
+    #     Six quad is 33, 34, 43, 44
+    
+    # M=5, N=4
+    # each quad becomes and upper and lower triangle (first column of expanded indices below)
+    # first entry is q_range[0] + (N*n_repeat + 1)*(n_repeat-1)
+    # First quad is 9, 10, 17, 18  (instead of 0, 1, 4, 5) - second pair increases by N*n_repeat
+    # Second quad is 11, 12, 19, 20 (instead of 1, 2, 5, 6) - second quad increases by two in each pos'n - q_range*n_repeat and adjust_range*n_repeat
+    # Third quad is 13, 14, 21, 22 (insted of 2, 3, 6, 7)
+
+    # skip down two rows now, adding 16 = N*n_repeat*n_repeat. This is the number by which to multiply adjust_start.
+    # Fourth quad is 25, 26, 33, 34 (instead of 4, 5, 8, 9)
+    # Fifth quad is 27, 28, 35, 36 (instead of 5, 6, 9, 10)
+    # Sixth quad is 29, 30, 37, 38 (instead of 6, 7, 10, 11)
+    #     print(adjust_start)
+    #     print(q_range                 )
+    #     print(q_range + 1             )
+    #     print(q_range + N*n_repeat    )
+    #     print(q_range + N*n_repeat + 1)
+    #     print(xv)
+    #     print(yv)
+
+    #     np.repeat(q_range,n_repeat)
+    
+    # numbers below are for for N-1=3 and M-1=4 and n_repeat=1
     # even (0,2,4,...) triangles
-    faces[0::2, 0] = q_range + 1
-    faces[0::2, 1] = q_range 
-    faces[0::2, 2] = q_range + N
+    faces[0::2, 0] = q_range + 1               # (1,2,3,5, 6, 7, 9,10,11,13,14,15)
+    faces[0::2, 1] = q_range                   # (0,1,2,4, 5, 6, 8, 9,10,12,13,14)
+    faces[0::2, 2] = q_range + N*n_repeat      # (4,5,6,8, 9,10,12,13,14,16,17,18)
     # odd (1,3,5,...) trianges
-    faces[1::2, 0] = q_range + N
-    faces[1::2, 1] = q_range + N + 1
-    faces[1::2, 2] = q_range + 1
+    faces[1::2, 0] = q_range + N*n_repeat      # (4,5,6,8, 9,10,12,13,14,16,17,18)
+    faces[1::2, 1] = q_range + N*n_repeat + 1  # (5,6,7,9,10,11,13,14,15,17,18,19)
+    faces[1::2, 2] = q_range + 1               # (1,2,3,5, 6, 7, 9,10,11,13,14,15)
 
-    return verts, faces
-    
+    return verts, faces    
 
+def tri_colors_from_quadmesh(x,y,z,d, dup_verts=True, cm=None, vmin=0, vmax=1):
+    verts, faces = mesh_from_quads(x,y,z, dup_verts=dup_verts)
+    # print(verts.shape, faces.shape)
 
-class Canvas(vispy.scene.SceneCanvas):
-    def __init__(self):
-        self.rotation = MatrixTransform()
+    # Face_colors increases first in range, then in azimuth. 
+    # d[azidx, ridx]
+    # The triangles receive colors with the lower triangles all in a row, then the upper triangles all in a row,
+    # which completes all the triangles in range.
+    # For six azimuths and five ranges, this is [d[0,:], d[0,:]] for the first azimuth,  
 
-        # Generate some data to work with
-        x,y,z,d = radar_example_data()
-        print x.shape, y.shape, z.shape
-        print d.shape, d.min(), d.max()
-
-        verts, faces = mesh_from_quads(x,y,z)
-        face_colors = np.empty((faces.shape[0], 4))
-        face_colors[0::2,0] = d.flat
-        face_colors[0::2,1] = d.flat
-        face_colors[0::2,2] = d.flat
-        face_colors[1::2,0] = d.flat
-        face_colors[1::2,1] = d.flat
-        face_colors[1::2,2] = d.flat
+    squashed = d.flatten()
+    face_colors = np.empty((faces.shape[0], 4))
+    if cm is None:
+        squashed -= squashed.min()
+        squashed /= (vmax-vmin) # squashed.max()
+        face_colors[0::2,0] = squashed
+        face_colors[0::2,1] = squashed
+        face_colors[0::2,2] = squashed
+        face_colors[1::2,0] = squashed
+        face_colors[1::2,1] = squashed
+        face_colors[1::2,2] = squashed
         face_colors[:,3] = 1.0 # transparency
-        mdata = MeshData(vertices=verts, faces=faces, face_colors=face_colors)
-        mesh = Mesh(meshdata=mdata)
-        mesh.transform = vispy.scene.transforms.MatrixTransform()
-        mesh.transform.scale([1./10, 1./10, 1./10])
+    else:
+        colors = cm.to_rgba(squashed)
+        face_colors[0::2] = colors
+        face_colors[1::2] = colors
+
+    if dup_verts:
+        n_repeat=2
+    else:
+        n_repeat=1
+    xv = np.repeat(np.repeat(x,n_repeat,axis=0), n_repeat, axis=1)
+    dv = np.zeros_like(xv)
+    dv[1:-1, 1:-1] = np.repeat(np.repeat(d,n_repeat,axis=0), n_repeat, axis=1)
+
+    squashed = dv.flatten()
+    if cm is None:
+        vert_colors = np.ones((verts.shape[0], 4))
+        squashed -= squashed.min()
+        squashed /= (vmax-vmin) # squashed.max()
+        vert_colors[:,0] = squashed
+        vert_colors[:,1] = squashed
+        vert_colors[:,2] = squashed
+    else:
+        vert_colors = cm.to_rgba(squashed)
         
-        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
-
-        self.size = (800, 800)
-        self.show()
-        view = self.central_widget.add_view()
-        # view.set_camera('turntable', mode='ortho', up='z', distance=2)
-        view.camera='turntable'
-        view.camera.mode='ortho'
-        view.camera.up='z'
-        view.camera.distance=20
-        view.add(mesh)
-
-
-if __name__ == '__main__':
-    win = Canvas()
-    import sys
-    if sys.flags.interactive != 1:
-        vispy.app.run()
+    colors=vert_colors
+    
+    return verts, faces, colors
