@@ -38,9 +38,10 @@ class Panels4D(LinkedPanels):
     # 1.618
     # 89,55,34,21,13,8,5,3,2,1,1,0
 
+    x0 = .025 # shift all panels to right by this amount to leave space for the left axis label
     dx = .89*0.55
     dz = .89*0.21
-    mg = .89*0.05
+    mg = .89*0.05 # margin
     dy = dx
     dt = dx+dz 
     w = mg+dt+mg
@@ -49,10 +50,10 @@ class Panels4D(LinkedPanels):
 
     # Left, bottom, width, height
     margin_defaults = {
-        'xy':(mg*aspect, mg, dx*aspect, dy),
-        'xz':(mg*aspect, mg+dy, dx*aspect, dz),
-        'zy':((mg+dx)*aspect, mg, dz*aspect, dy),
-        'tz':(mg*aspect, mg+dy+dz+mg, dt*aspect, dz),
+        'xy':(mg*aspect+x0, mg, dx*aspect, dy),
+        'xz':(mg*aspect+x0, mg+dy, dx*aspect, dz),
+        'zy':((mg+dx)*aspect+x0, mg, dz*aspect, dy),
+        'tz':(mg*aspect+x0, mg+dy+dz+mg, dt*aspect, dz),
         }
 
     def __init__(self, *args, **kwargs):
@@ -181,14 +182,14 @@ def plot_demo_dataset(d, panels):
     return branch, scatter_outlet_broadcaster
     
 
-def B4D_startup(show=False, basedate=None, ctr_lat=33.5, ctr_lon=-101.5):
+def B4D_startup(show=False, basedate=None, ctr_lat=33.5, ctr_lon=-101.5, figsize=(8.5, 11.0), dpi=80):
     import matplotlib
     fontspec = {'family':'Helvetica', 'weight':'bold', 'size':10}
     matplotlib.rc('font', **fontspec)
     
     import matplotlib.pyplot as plt
                         
-    panel_fig = plt.figure(figsize=(8.5, 11.0))
+    panel_fig = plt.figure(figsize=figsize, dpi=dpi)
     panels = Panels4D(figure=panel_fig, names_4D=('x', 'y', 'z', 'time'), basedate=basedate, ctr_lat=ctr_lat, ctr_lon=ctr_lon)
     fig_updater = FigureUpdater(panel_fig)
     

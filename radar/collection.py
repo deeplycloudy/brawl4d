@@ -41,7 +41,7 @@ def data_for_ray_slice(radar, ray_sl, fieldnames=None):
 def iter_sweep_data(radar, fieldnames):
     for swp_start, swp_end in zip(radar.sweep_start_ray_index['data'], 
                                   radar.sweep_end_ray_index['data']):
-        print swp_start, swp_end
+        # print swp_start, swp_end
         ray_sl = slice(swp_start,swp_end+1)
         yield data_for_ray_slice(radar,ray_sl,fieldnames=fieldnames)
 
@@ -121,8 +121,10 @@ class RadarFileCollection(object):
         """
         
         #target = pandas.DataFrame([(t0, t1),], columns=('start', 'end'))
+        zero_dt = np.zeros(1, dtype=np.timedelta64)[0]
         
-        overlap = ((t0 - self.sweep_table['end']) < 0) & ((t1 - self.sweep_table['start']) > 0 )
+        overlap = (((t0 - self.sweep_table['end']) < zero_dt) & 
+                   ((t1 - self.sweep_table['start']) > zero_dt))
         sweeps = self.sweep_table[overlap]
         if len(sweeps) > 0:
             selection = np.zeros(len(sweeps), dtype=bool)
