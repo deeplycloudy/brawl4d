@@ -1,6 +1,7 @@
 # Eric Bruning, 11 October 2014. License: BSD (new).
 # Modified from the vispy Mesh and ModularMesh examples.
 
+from __future__ import absolute_import
 import numpy as np
 pi = np.pi
 

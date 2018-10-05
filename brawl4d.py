@@ -2,6 +2,8 @@
     Balloons, Radar, and Aircraft with Lightning = BRAWL.
 
 """
+from __future__ import absolute_import
+from __future__ import print_function
 import datetime
 import numpy as np
 
@@ -129,7 +131,7 @@ class Panels4D(LinkedPanels):
             self._active_lasso = PolyLasso(self.figure, self._lasso_callback)
             lock(self._active_lasso)
         else:
-            print "Please deselect other tools to use the lasso."
+            print("Please deselect other tools to use the lasso.")
 
     
 

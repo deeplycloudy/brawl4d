@@ -1,7 +1,10 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import tables
 
 from stormdrain.pipeline import coroutine
 from stormdrain.pubsub import get_exchange
+from six.moves import zip
 
 class HDF5FlashDataset(object):
     """ Provides an pipeline source for the flash table part of an HDF5Dataset"""
@@ -19,19 +22,19 @@ class HDF5Dataset(object):
     def __init__(self, h5filename, table_path=None, target=None, mode='r'):
         self.target = target
         
-        self.h5file = tables.openFile(h5filename, mode=mode)
-        self.table = self.h5file.getNode(table_path)
+        self.h5file = tables.open_file(h5filename, mode=mode)
+        self.table = self.h5file.get_node(table_path)
         self.data = self.table[:]
         
         get_exchange('SD_reflow_start').attach(self)
         
         flash_table_path = table_path.replace('events', 'flashes')
         try:
-            self.flash_table = self.h5file.getNode(flash_table_path)
+            self.flash_table = self.h5file.get_node(flash_table_path)
             self.flash_data = self.flash_table[:]
         except tables.NoSuchNodeError:
             self.flash_table = None
-            print "Did not find flash data at {0}".format(flash_table_path)
+            print("Did not find flash data at {0}".format(flash_table_path))
         
 
     def update_h5(self, colname, coldata, row_ids):
@@ -65,7 +68,7 @@ class HDF5Dataset(object):
             else:
                 # update everything
                 self.data[indices] = a
-                print "Did not update HDF5 file"
+                print("Did not update HDF5 file")
                 
         
     def send(self, msg):

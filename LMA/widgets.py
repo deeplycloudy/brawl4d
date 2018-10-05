@@ -1,5 +1,6 @@
 
 from __future__ import print_function
+from __future__ import absolute_import
 from brawl4d.brawl4d import redraw
 from brawl4d.LMA.controller import LMAController
 import ipywidgets as widgets

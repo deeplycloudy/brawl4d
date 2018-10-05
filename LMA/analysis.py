@@ -14,6 +14,7 @@ lma_ctrl is an instance of brawl4d.LMA.controller.LMAController that
 >>> current_events_flashes.targets.add(energy_spectrum_plotter.inlet)
 
 """
+from __future__ import absolute_import
 import numpy as np
 from stormdrain.pipeline import coroutine
 from stormdrain.support.matplotlib.artistupdaters import LineArtistUpdater

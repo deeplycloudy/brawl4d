@@ -34,6 +34,7 @@ easily accomplished by tapping into matplotlib's timer events.
 
 """
 
+from __future__ import absolute_import
 from datetime import datetime
 import threading
 from collections import deque

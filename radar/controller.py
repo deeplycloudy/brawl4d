@@ -47,6 +47,8 @@
 """
 
 
+from __future__ import absolute_import
+from __future__ import print_function
 class RadarController(object):
     """ Manage loading radar datasets and creation of displays. """
     def __init__(self):
@@ -58,7 +60,7 @@ class RadarController(object):
             import pyart
             return pyart.io.read(filename, **kwargs)
         except ImportError:
-            print "Can't read radar: pyart not installed"
+            print("Can't read radar: pyart not installed")
             return None
             
     def radar_to_panels(self, radar, panels, **kwargs):

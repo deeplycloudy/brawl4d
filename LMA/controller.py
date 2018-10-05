@@ -4,9 +4,11 @@
     understood by the lmatools package.
 
 """
+from __future__ import absolute_import
+from __future__ import print_function
 import numpy as np
 
-from lmatools.flashsort.autosort.LMAarrayFile import LMAdataFile
+from lmatools.io.LMAarrayFile import LMAdataFile
 
 from stormdrain.bounds import Bounds, BoundsFilter
 from stormdrain.data import NamedArrayDataset, indexed
@@ -101,7 +103,7 @@ class LMAController(object):
                 good = (fl['n_points'] >= min_points)
                 N_good = len(fl[good])
                 area = np.mean(fl['area'][good])
-                print template.format(N_good, N, area, min_points)
+                print(template.format(N_good, N, area, min_points))
         
     def flash_stats_for_dataset(self, d, selection_broadcaster):
         
@@ -163,20 +165,20 @@ class LMAController(object):
         try:
             import tables
         except ImportError:
-            print "couldn't import pytables"
+            print("couldn't import pytables")
             return None
-        from hdf5_lma import HDF5Dataset
+        from .hdf5_lma import HDF5Dataset
         
         # get the HDF5 table name
-        LMAh5 = tables.openFile(LMAfileHDF, 'r')
-        table_names = LMAh5.root.events._v_children.keys()
+        LMAh5 = tables.open_file(LMAfileHDF, 'r')
+        table_names = list(LMAh5.root.events._v_children.keys())
         table_path = '/events/' + table_names[0]
         LMAh5.close()
         d = HDF5Dataset(LMAfileHDF, table_path=table_path, mode='a')
         self.datasets.add(d)
         
         if d.flash_table is not None:
-            print "found flash data"
+            print("found flash data")
         
         return d
         
@@ -196,7 +198,7 @@ class LMAController(object):
     def load_hdf5_flashes_to_panels(self, panels, hdf5dataset, min_points=10):
         """ Set up a flash dataset display. The sole argument is usually the HDF5 
             LMA dataset returned by a call to self.load_hdf5_to_panels """
-        from hdf5_lma import HDF5FlashDataset
+        from .hdf5_lma import HDF5FlashDataset
         if hdf5dataset.flash_table is not None:
             point_count_dtype = hdf5dataset.flash_data['n_points'].dtype
             self.bounds.n_points = (min_points, np.iinfo(point_count_dtype))

@@ -1,9 +1,11 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import numpy as np
 import datetime
 
-from collection import RadarFileCollection
+from .collection import RadarFileCollection
 from pyart.graph.common import sweep_coords_to_cart, corner_to_point
-from quadmesh_geometry import mesh_from_quads, radar_example_data
+from .quadmesh_geometry import mesh_from_quads, radar_example_data
 
 from vispy import gloo
 import vispy

@@ -1,6 +1,9 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import pandas
 import numpy as np
 import pyart
+from six.moves import zip
 
 def diagnose_vcp(radar):
     # swp_start = radar.sweep_start_ray_index['data']
@@ -33,7 +36,7 @@ def data_for_ray_slice(radar, ray_sl, fieldnames=None):
                 data = radar.fields[fieldname]['data'][ray_sl, :]
             except KeyError:
                 data = None
-                print("Couldn't find {1} data in {0}".format(radar,fieldname))
+                print(("Couldn't find {1} data in {0}".format(radar,fieldname)))
             data_dict[fieldname] = data
             
     return r,az,el,t,data_dict
